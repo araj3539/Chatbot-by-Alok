@@ -222,7 +222,7 @@
         messageWrapper.appendChild(messageBubble);
         chatContainer.appendChild(messageWrapper);
         chatContainer.scrollTop = chatContainer.scrollHeight;
-        return messageBubble; // Return the bubble element for streaming
+        return messageBubble;
     }
 
     // --- Chat Logic Functions ---
@@ -262,22 +262,26 @@
     }
 
     async function renameChatWithAI(chatObject) {
+        console.log("DEBUG: renameChatWithAI function was called."); // DEBUG LOG
         try {
             const conversationForTitle = chatObject.history.slice(1, 5).map(m => `${m.role}: ${m.parts[0].text}`).join('\n');
             const prompt = `Based on the following conversation, create a short, concise title (4-5 words maximum). The title should be about the main subject. Do not include "AI Tutor", "Chatbot", or use quotes. Just return the title text.\n\nConversation:\n${conversationForTitle}`;
             
-            // --- FIXED: Pointing to the new, non-streaming endpoint ---
             const response = await fetch('/api/generate-title', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt: prompt })
             });
 
-            if (!response.ok) return;
+            if (!response.ok) {
+                console.error("DEBUG: Response from /api/generate-title was not OK", response.status); // DEBUG LOG
+                return;
+            }
 
             const result = await response.json();
             if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
                 const newTitle = result.candidates[0].content.parts[0].text;
+                console.log("DEBUG: New title received:", newTitle); // DEBUG LOG
                 chatObject.title = newTitle.trim().replace(/"/g, '');
                 saveAllChats();
                 renderChatHistoryList();
@@ -287,21 +291,18 @@
         }
     }
 
-    // --- REFINED STREAMING SEND MESSAGE FUNCTION ---
     async function handleSendMessage() {
+        console.log("DEBUG: handleSendMessage triggered."); // DEBUG LOG
         const userMessage = userInput.value.trim();
         if (!userMessage) return;
 
         const isNewChat = !currentChatId;
+        console.log("DEBUG: Is this a new chat?", isNewChat); // DEBUG LOG
         let currentChatObject;
 
         if (isNewChat) {
             currentChatId = Date.now().toString();
-            const newChat = {
-                id: currentChatId,
-                title: "New Chat",
-                history: [...currentChatHistory]
-            };
+            const newChat = { id: currentChatId, title: "New Chat", history: [...currentChatHistory] };
             allChats.push(newChat);
             currentChatObject = newChat;
         } else {
@@ -349,10 +350,8 @@
                 while (true) {
                     const { value, done } = await reader.read();
                     if (done) break;
-                    
                     const chunk = decoder.decode(value, { stream: true });
                     const lines = chunk.split('\n');
-                    
                     for (const line of lines) {
                         if (line.startsWith('data: ')) {
                             try {
@@ -360,12 +359,9 @@
                                 const parsed = JSON.parse(jsonStr);
                                 const text = parsed.candidates[0].content.parts[0].text;
                                 fullBotResponse += text;
-                            } catch (e) {
-                                // Ignore parsing errors
-                            }
+                            } catch (e) {}
                         }
                     }
-
                     const now = Date.now();
                     if (now - lastUpdateTime > updateInterval) {
                         botMessageBubble.innerHTML = marked.parse(fullBotResponse);
@@ -384,7 +380,15 @@
             currentChatObject.history = currentChatHistory;
             saveAllChats();
 
-            if (isNewChat && isSubstantialMessage(userMessage)) {
+            // --- DEBUGGING THE RENAME LOGIC ---
+            console.log("DEBUG: Bot response received. Checking if rename is needed."); // DEBUG LOG
+            const needsRenaming = currentChatObject.title === "New Chat";
+            const isSubstantial = isSubstantialMessage(userMessage);
+            console.log("DEBUG: Does it need renaming?", needsRenaming); // DEBUG LOG
+            console.log("DEBUG: Is the message substantial?", isSubstantial); // DEBUG LOG
+
+            if (needsRenaming && isSubstantial) {
+                console.log("DEBUG: Condition met. Calling renameChatWithAI..."); // DEBUG LOG
                 renameChatWithAI(currentChatObject);
             }
 
