@@ -144,7 +144,6 @@
             </footer>
         </div>
     </div>
-
     <script>
     // DOM Element References
     const appContainer = document.getElementById('app-container');
@@ -275,6 +274,7 @@
                 })
             });
             if (!response.ok) return;
+            // Note: This response is not streamed, so we parse it directly.
             const result = await response.json();
             if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
                 const newTitle = result.candidates[0].content.parts[0].text;
@@ -287,7 +287,7 @@
         }
     }
 
-    // --- NEW STREAMING SEND MESSAGE FUNCTION ---
+    // --- REFINED STREAMING SEND MESSAGE FUNCTION ---
     async function handleSendMessage() {
         const userMessage = userInput.value.trim();
         if (!userMessage) return;
@@ -318,9 +318,11 @@
         userInput.value = '';
         sendBtn.disabled = true;
 
-        // Create an empty bubble for the bot's response
-        const botMessageBubble = appendMessage('<i class="fas fa-spinner fa-pulse"></i>', 'bot');
+        // Use a reliable CSS spinner
+        const botMessageBubble = appendMessage('<div class="spinner"></div>', 'bot');
         let fullBotResponse = "";
+        let lastUpdateTime = 0;
+        const updateInterval = 50; // Update the DOM at most every 50ms
 
         try {
             const response = await fetch('/api/chat', {
@@ -344,28 +346,42 @@
             const decoder = new TextDecoder();
             botMessageBubble.innerHTML = ""; // Clear the spinner
 
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
-                
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const jsonStr = line.substring(6);
-                            const parsed = JSON.parse(jsonStr);
-                            const text = parsed.candidates[0].content.parts[0].text;
-                            fullBotResponse += text;
-                            botMessageBubble.innerHTML = marked.parse(fullBotResponse);
-                            chatContainer.scrollTop = chatContainer.scrollHeight;
-                        } catch (e) {
-                            // Ignore parsing errors for incomplete JSON
+            const processStream = async () => {
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const jsonStr = line.substring(6);
+                                const parsed = JSON.parse(jsonStr);
+                                const text = parsed.candidates[0].content.parts[0].text;
+                                fullBotResponse += text;
+                            } catch (e) {
+                                // Ignore parsing errors for incomplete JSON chunks
+                            }
                         }
                     }
+
+                    // Throttle DOM updates for smoother rendering
+                    const now = Date.now();
+                    if (now - lastUpdateTime > updateInterval) {
+                        botMessageBubble.innerHTML = marked.parse(fullBotResponse);
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                        lastUpdateTime = now;
+                    }
                 }
-            }
+            };
+            
+            await processStream();
+
+            // Final update to ensure the last tokens are rendered
+            botMessageBubble.innerHTML = marked.parse(fullBotResponse);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
             
             // Save the final complete response to history
             currentChatHistory.push({ role: "model", parts: [{ text: fullBotResponse }] });
@@ -398,6 +414,24 @@
     window.addEventListener('resize', setAppHeight);
 
     window.onload = () => {
+        // Add spinner CSS to the head
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .spinner {
+                border: 3px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                border-top: 3px solid #fff;
+                width: 24px;
+                height: 24px;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
         setAppHeight();
         loadAllChats();
         if (allChats.length > 0) {
