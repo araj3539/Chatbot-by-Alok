@@ -25,8 +25,8 @@ export default async function handler(req) {
     const payload = {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generation_config: {
-        "temperature": 0.5,
-        "max_output_tokens": 60,
+        "temperature": 0.3,
+        "max_output_tokens": 80, // Increased for a larger safety buffer
       }
     };
 
@@ -43,10 +43,14 @@ export default async function handler(req) {
 
     const data = await googleResponse.json();
     console.debug(data);
-    // --- CORRECTED SAFETY CHECK ---
-    // This is more lenient and prevents a crash if the response is cut off.
+    
+    // This safety check prevents a crash if the response is empty
     if (!data.candidates || !data.candidates[0]) {
-        throw new Error("Invalid response structure from Gemini API for title generation.");
+        // Return a successful response with empty content so the frontend doesn't error
+        return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: "Chat" }] } }] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
     }
     
     return new Response(JSON.stringify(data), {

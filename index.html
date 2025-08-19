@@ -263,8 +263,8 @@
 
     async function renameChatWithAI(chatObject, firstUserMessage) {
         try {
-            // --- FINAL FIX: Send only the first user message for a concise prompt ---
-            const prompt = `Based on the following user query, create a short, concise title (4-5 words maximum). The title should be about the main subject. Do not include "AI Tutor", "Chatbot", or use quotes. Just return the title text.\n\nQuery:\n${firstUserMessage}`;
+            // --- FINAL FIX: A much shorter, more efficient prompt ---
+            const prompt = `Create a short title (4-5 words max) for this user query: "${firstUserMessage}"`;
             
             const response = await fetch('/api/generate-title', {
                 method: 'POST',
