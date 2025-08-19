@@ -144,291 +144,285 @@
             </footer>
         </div>
     </div>
+
     <script>
-    // DOM Element References
-    const appContainer = document.getElementById('app-container');
-    const chatContainer = document.getElementById('chat-container');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const newChatBtn = document.getElementById('new-chat-btn');
-    const chatHistoryList = document.getElementById('chat-history-list');
-    const menuBtn = document.getElementById('menu-btn');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
+        // DOM Element References
+        const appContainer = document.getElementById('app-container');
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const newChatBtn = document.getElementById('new-chat-btn');
+        const chatHistoryList = document.getElementById('chat-history-list');
+        const menuBtn = document.getElementById('menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
 
-    const systemInstruction = {
-        role: "system",
-        parts: [{
-            text: "Your name is NamasteAI and created by Alok Raj. You are an AI Tutor Chatbot, an intelligent study companion designed to help students learn, revise, and stay motivated. You act as both a study assistant and a mentor, providing subject explanations, solving doubts, giving practice problems, and offering motivational support to keep learners engaged. Format your responses using markdown."
-        }]
-    };
-    
-    // --- State Management ---
-    let currentChatHistory = [];
-    let allChats = [];
-    let currentChatId = null;
+        const GEMINI_API_KEY = "AIzaSyA9TP1HPtuKH1_k-r60v0RI5coVuPUtRfE"; // PASTE YOUR API KEY HERE
 
-    // --- Local Storage Functions ---
-    const saveAllChats = () => {
-        if (allChats.length > 50) allChats = allChats.slice(allChats.length - 50);
-        localStorage.setItem('aiTutorAllChats', JSON.stringify(allChats));
-    };
-    const loadAllChats = () => {
-        const savedChats = localStorage.getItem('aiTutorAllChats');
-        allChats = savedChats ? JSON.parse(savedChats) : [];
-    };
+        const systemInstruction = {
+            role: "system",
+            parts: [{
+                text: "Your name is NamasteAI created By Alok Raj.You are an AI Tutor Chatbot, an intelligent study companion designed to help students learn, revise, and stay motivated. You act as both a study assistant and a mentor, providing subject explanations, solving doubts, giving practice problems, and offering motivational support to keep learners engaged. Format your responses using markdown."
+            }]
+        };
+        
+        // --- State Management ---
+        let currentChatHistory = [];
+        let allChats = [];
+        let currentChatId = null;
 
-    // --- UI Rendering Functions ---
-    const renderChatHistoryList = () => {
-        chatHistoryList.innerHTML = '';
-        allChats.forEach(chat => {
-            const item = document.createElement('div');
-            item.classList.add('history-item', 'relative');
-            const link = document.createElement('a');
-            link.href = '#';
-            link.textContent = chat.title;
-            link.classList.add('block', 'p-3', 'rounded-lg', 'truncate', 'hover:bg-gray-700', 'transition-colors', 'duration-200', 'w-full');
-            if (chat.id === currentChatId) link.classList.add('bg-gray-700/50');
-            link.onclick = (e) => { e.preventDefault(); loadChat(chat.id); closeSidebar(); };
-            const deleteBtn = document.createElement('button');
-            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-            deleteBtn.classList.add('delete-btn', 'absolute', 'right-2', 'top-1/2', '-translate-y-1/2', 'text-gray-400', 'hover:text-red-500', 'p-1');
-            deleteBtn.onclick = (e) => { e.stopPropagation(); deleteChat(chat.id); };
-            item.appendChild(link);
-            item.appendChild(deleteBtn);
-            chatHistoryList.prepend(item);
-        });
-    };
-
-    const renderChatMessages = () => {
-        chatContainer.innerHTML = '';
-        currentChatHistory.forEach(msg => {
-            if (msg.role !== 'system') {
-                const sender = msg.role === 'user' ? 'user' : 'bot';
-                const messageText = msg.parts[0].text;
-                const formattedMessage = sender === 'bot' ? marked.parse(messageText) : messageText;
-                appendMessage(formattedMessage, sender);
+        // --- Local Storage Functions ---
+        const saveAllChats = () => {
+            if (allChats.length > 50) {
+                allChats = allChats.slice(allChats.length - 50);
             }
-        });
-    };
+            localStorage.setItem('aiTutorAllChats', JSON.stringify(allChats));
+        };
 
-    function appendMessage(message, sender) {
-        const messageWrapper = document.createElement('div');
-        messageWrapper.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start');
-        const messageBubble = document.createElement('div');
-        messageBubble.classList.add('chat-bubble', 'p-4', 'rounded-2xl', sender === 'user' ? 'user-bubble' : 'bot-bubble', 'shadow-md');
-        if (sender === 'user') messageBubble.textContent = message;
-        else messageBubble.innerHTML = message;
-        messageWrapper.appendChild(messageBubble);
-        chatContainer.appendChild(messageWrapper);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-        return messageBubble;
-    }
+        const loadAllChats = () => {
+            const savedChats = localStorage.getItem('aiTutorAllChats');
+            allChats = savedChats ? JSON.parse(savedChats) : [];
+        };
 
-    // --- Chat Logic Functions ---
-    const startNewChat = () => {
-        currentChatId = null;
-        const welcomeMessage = "Hello! I'm NamasteAI, your AI Tutor created by Alok Raj. How can I help you with your studies today?";
-        currentChatHistory = [systemInstruction, { role: "model", parts: [{ text: welcomeMessage }] }];
-        renderChatMessages();
-        renderChatHistoryList();
-        closeSidebar();
-    };
+        // --- UI Rendering Functions ---
+        const renderChatHistoryList = () => {
+            chatHistoryList.innerHTML = '';
+            allChats.forEach(chat => {
+                const item = document.createElement('div');
+                item.classList.add('history-item', 'relative');
+                
+                const link = document.createElement('a');
+                link.href = '#';
+                link.textContent = chat.title;
+                link.classList.add('block', 'p-3', 'rounded-lg', 'truncate', 'hover:bg-gray-700', 'transition-colors', 'duration-200', 'w-full');
+                if (chat.id === currentChatId) {
+                    link.classList.add('bg-gray-700/50');
+                }
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    loadChat(chat.id);
+                    closeSidebar();
+                };
 
-    const loadChat = (chatId) => {
-        const chat = allChats.find(c => c.id === chatId);
-        if (chat) {
-            currentChatId = chat.id;
-            currentChatHistory = [...chat.history];
-            renderChatMessages();
-            renderChatHistoryList();
-        }
-    };
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                deleteBtn.classList.add('delete-btn', 'absolute', 'right-2', 'top-1/2', '-translate-y-1/2', 'text-gray-400', 'hover:text-red-500', 'p-1');
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteChat(chat.id);
+                };
 
-    const deleteChat = (chatId) => {
-        allChats = allChats.filter(c => c.id !== chatId);
-        saveAllChats();
-        if (currentChatId === chatId) {
-            if (allChats.length > 0) loadChat(allChats[allChats.length - 1].id);
-            else startNewChat();
-        }
-        renderChatHistoryList();
-    };
-
-    function isSubstantialMessage(message) {
-        const genericGreetings = ['hi', 'hello', 'hey', 'yo', 'sup', 'what\'s up', 'good morning', 'good afternoon', 'good evening'];
-        const normalizedMessage = message.toLowerCase().trim().replace(/[.,!?;]/g, '');
-        return !genericGreetings.includes(normalizedMessage) || message.split(' ').length > 3;
-    }
-
-    async function renameChatWithAI(chatObject, firstUserMessage) {
-        try {
-            // --- FINAL FIX: A much shorter, more efficient prompt ---
-            const prompt = `Create a short title (4-5 words max) for this user query: "${firstUserMessage}"`;
-            
-            const response = await fetch('/api/generate-title', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: prompt })
+                item.appendChild(link);
+                item.appendChild(deleteBtn);
+                chatHistoryList.prepend(item);
             });
+        };
 
-            if (!response.ok) return;
+        const renderChatMessages = () => {
+            chatContainer.innerHTML = '';
+            currentChatHistory.forEach(msg => {
+                if (msg.role !== 'system') {
+                    const sender = msg.role === 'user' ? 'user' : 'bot';
+                    const messageText = msg.parts[0].text;
+                    const formattedMessage = sender === 'bot' ? marked.parse(messageText) : messageText;
+                    appendMessage(formattedMessage, sender);
+                }
+            });
+        };
 
-            const result = await response.json();
-            if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
-                const newTitle = result.candidates[0].content.parts[0].text;
-                chatObject.title = newTitle.trim().replace(/"/g, '') || "Titled Chat";
-                saveAllChats();
-                renderChatHistoryList();
+        function appendMessage(message, sender) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start');
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('chat-bubble', 'p-4', 'rounded-2xl', sender === 'user' ? 'user-bubble' : 'bot-bubble', 'shadow-md');
+            if (sender === 'user') {
+                messageBubble.textContent = message;
+            } else {
+                messageBubble.innerHTML = message;
             }
-        } catch (error) {
-            console.error("Error auto-renaming chat:", error);
-        }
-    }
-
-    async function handleSendMessage() {
-        const userMessage = userInput.value.trim();
-        if (!userMessage) return;
-
-        let currentChatObject;
-        const isNewChat = !currentChatId;
-
-        if (isNewChat) {
-            const newChatId = Date.now().toString();
-            currentChatHistory = [
-                systemInstruction,
-                { role: "model", parts: [{ text: "Hello! I'm NamasteAI, your AI Tutor created by Alok Raj. How can I help you with your studies today?" }] }
-            ];
-            const newChat = {
-                id: newChatId,
-                title: "New Chat",
-                history: [...currentChatHistory]
-            };
-            allChats.push(newChat);
-            currentChatObject = newChat;
-            currentChatId = newChatId;
-        } else {
-            currentChatObject = allChats.find(c => c.id === currentChatId);
+            messageWrapper.appendChild(messageBubble);
+            chatContainer.appendChild(messageWrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         
-        currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-        currentChatObject.history = [...currentChatHistory];
-        renderChatMessages();
-        saveAllChats();
-        if (isNewChat) renderChatHistoryList();
-        
-        userInput.value = '';
-        sendBtn.disabled = true;
+        function showTypingIndicator(show) {
+            let indicator = document.getElementById('typing-indicator');
+            if (show) {
+                if (!indicator) {
+                    indicator = document.createElement('div');
+                    indicator.id = 'typing-indicator';
+                    indicator.classList.add('flex', 'justify-start');
+                    indicator.innerHTML = `<div class="chat-bubble bot-bubble p-4 rounded-2xl shadow-md"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+                    chatContainer.appendChild(indicator);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            } else {
+                if (indicator) indicator.remove();
+            }
+        }
 
-        const botMessageBubble = appendMessage('<div class="spinner"></div>', 'bot');
-        let fullBotResponse = "";
-        let lastUpdateTime = 0;
-        const updateInterval = 50;
-
-        try {
-            const response = await fetch('/api/chat', {
+        // --- Centralized Gemini API Call Function ---
+        async function callGeminiAPI(payload) {
+            if (!GEMINI_API_KEY) {
+                throw new Error("Please add your Gemini API Key in the script.");
+            }
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
+            
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    history: currentChatHistory.slice(1),
-                    systemInstruction: systemInstruction
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || `Server error: ${response.status}`);
+                throw new Error(errorData.error.message || `HTTP error! status: ${response.status}`);
             }
+            const result = await response.json();
+            if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error("Invalid response structure from API.");
+            }
+        }
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            botMessageBubble.innerHTML = "";
+        // --- Chat Logic Functions ---
+        const startNewChat = () => {
+            currentChatId = null;
+            const welcomeMessage = "Hello! I'm your AI Tutor. How can I help you with your studies today?";
+            currentChatHistory = [
+                systemInstruction,
+                { role: "model", parts: [{ text: welcomeMessage }] }
+            ];
+            renderChatMessages();
+            renderChatHistoryList(); // Deselects any active chat
+            closeSidebar();
+        };
 
-            const processStream = async () => {
-                while (true) {
-                    const { value, done } = await reader.read();
-                    if (done) break;
-                    const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n');
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const jsonStr = line.substring(6);
-                                const parsed = JSON.parse(jsonStr);
-                                const text = parsed.candidates[0].content.parts[0].text;
-                                fullBotResponse += text;
-                            } catch (e) {}
-                        }
-                    }
-                    const now = Date.now();
-                    if (now - lastUpdateTime > updateInterval) {
-                        botMessageBubble.innerHTML = marked.parse(fullBotResponse);
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
-                        lastUpdateTime = now;
-                    }
-                }
-            };
-            
-            await processStream();
+        const loadChat = (chatId) => {
+            const chat = allChats.find(c => c.id === chatId);
+            if (chat) {
+                currentChatId = chat.id;
+                currentChatHistory = [...chat.history];
+                renderChatMessages();
+                renderChatHistoryList();
+            }
+        };
 
-            botMessageBubble.innerHTML = marked.parse(fullBotResponse);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            
-            currentChatHistory.push({ role: "model", parts: [{ text: fullBotResponse }] });
-            currentChatObject.history = [...currentChatHistory];
+        const deleteChat = (chatId) => {
+            allChats = allChats.filter(c => c.id !== chatId);
             saveAllChats();
-
-            if (isNewChat && isSubstantialMessage(userMessage)) {
-                renameChatWithAI(currentChatObject, userMessage);
+            if (currentChatId === chatId) {
+                if (allChats.length > 0) {
+                    loadChat(allChats[allChats.length - 1].id);
+                } else {
+                    startNewChat();
+                }
             }
+            renderChatHistoryList();
+        };
 
-        } catch (error) {
-            console.error("Error in handleSendMessage:", error);
-            botMessageBubble.innerHTML = `<strong>Error:</strong> ${error.message}`;
-        } finally {
-            sendBtn.disabled = false;
+        function isSubstantialMessage(message) {
+            const genericGreetings = ['hi', 'hello', 'hey', 'yo', 'sup', 'what\'s up', 'good morning', 'good afternoon', 'good evening'];
+            const normalizedMessage = message.toLowerCase().trim().replace(/[.,!?;]/g, '');
+            // A message is substantial if it's not a generic greeting OR if it's longer than 3 words.
+            return !genericGreetings.includes(normalizedMessage) || message.split(' ').length > 3;
         }
-    }
 
-    // --- Mobile Viewport & Sidebar Logic ---
-    const setAppHeight = () => { appContainer.style.height = `${window.innerHeight}px`; };
-    const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
-    const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
-
-    // --- Event Listeners & Initialization ---
-    sendBtn.addEventListener('click', handleSendMessage);
-    userInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') handleSendMessage(); });
-    newChatBtn.addEventListener('click', startNewChat);
-    menuBtn.addEventListener('click', openSidebar);
-    sidebarOverlay.addEventListener('click', closeSidebar);
-    window.addEventListener('resize', setAppHeight);
-
-    window.onload = () => {
-        const style = document.createElement('style');
-        style.innerHTML = `
-            .spinner {
-                border: 3px solid rgba(255, 255, 255, 0.3);
-                border-radius: 50%;
-                border-top: 3px solid #fff;
-                width: 24px;
-                height: 24px;
-                animation: spin 1s linear infinite;
+        async function renameChatWithAI(chatObject) {
+            try {
+                // Use more of the conversation for better context
+                const conversationForTitle = chatObject.history.slice(1, 5).map(m => `${m.role}: ${m.parts[0].text}`).join('\n');
+                // --- UPDATED PROMPT ---
+                const prompt = `Based on the following conversation, create a short, concise title (4-5 words maximum). The title should be about the main subject. Do not include "AI Tutor", "Chatbot", or use quotes. Just return the title text.\n\nConversation:\n${conversationForTitle}`;
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                const newTitle = await callGeminiAPI(payload);
+                chatObject.title = newTitle.trim().replace(/"/g, '');
+                saveAllChats();
+                renderChatHistoryList();
+            } catch (error) {
+                console.error("Error auto-renaming chat:", error);
             }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        `;
-        document.head.appendChild(style);
-
-        setAppHeight();
-        loadAllChats();
-        if (allChats.length > 0) {
-            loadChat(allChats[allChats.length - 1].id);
-        } else {
-            startNewChat();
         }
-    };
+
+        async function handleSendMessage() {
+            const userMessage = userInput.value.trim();
+            if (!userMessage) return;
+
+            const isNewChat = !currentChatId;
+            let currentChatObject;
+
+            if (isNewChat) {
+                currentChatId = Date.now().toString();
+                const newChat = {
+                    id: currentChatId,
+                    title: "New Chat", // Start with a generic title
+                    history: [...currentChatHistory]
+                };
+                allChats.push(newChat);
+                currentChatObject = newChat;
+            } else {
+                currentChatObject = allChats.find(c => c.id === currentChatId);
+            }
+            
+            appendMessage(userMessage, 'user');
+            currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+            currentChatObject.history = currentChatHistory;
+            
+            saveAllChats();
+            if(isNewChat) renderChatHistoryList();
+            
+            userInput.value = '';
+            showTypingIndicator(true);
+
+            try {
+                const payload = {
+                    contents: currentChatHistory.slice(1).map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: msg.parts })),
+                    system_instruction: systemInstruction
+                };
+                const botMessage = await callGeminiAPI(payload);
+                showTypingIndicator(false);
+                const formattedBotMessage = marked.parse(botMessage);
+                appendMessage(formattedBotMessage, 'bot');
+                currentChatHistory.push({ role: "model", parts: [{ text: botMessage }] });
+                currentChatObject.history = currentChatHistory;
+                saveAllChats();
+
+                // --- REFINED AUTO-RENAME LOGIC ---
+                const needsRenaming = currentChatObject.title === "New Chat";
+                if (needsRenaming && isSubstantialMessage(userMessage)) {
+                    renameChatWithAI(currentChatObject);
+                }
+
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                showTypingIndicator(false);
+                appendMessage(`<strong>Error:</strong> ${error.message}`, 'bot');
+            }
+        }
+
+        // --- Mobile Viewport & Sidebar Logic ---
+        const setAppHeight = () => { appContainer.style.height = `${window.innerHeight}px`; };
+        const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
+        const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
+
+        // --- Event Listeners & Initialization ---
+        sendBtn.addEventListener('click', handleSendMessage);
+        userInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') handleSendMessage(); });
+        newChatBtn.addEventListener('click', startNewChat);
+        menuBtn.addEventListener('click', openSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+        window.addEventListener('resize', setAppHeight);
+
+        window.onload = () => {
+            setAppHeight();
+            loadAllChats();
+            if (allChats.length > 0) {
+                loadChat(allChats[allChats.length - 1].id); // Load the most recent chat
+            } else {
+                startNewChat(); // Or start a fresh one if there's no history
+            }
+        };
     </script>
 </body>
 </html>
