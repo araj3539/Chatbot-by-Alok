@@ -25,8 +25,8 @@ export default async function handler(req) {
     const payload = {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generation_config: {
-        "temperature": 0.3,
-        "max_output_tokens": 30, // Increased for safety
+        "temperature": 0.5, // Slightly more creative
+        "max_output_tokens": 60, // Doubled for absolute safety
       }
     };
 
@@ -42,7 +42,13 @@ export default async function handler(req) {
     }
 
     const data = await googleResponse.json();
-    console.debug(data);
+    
+    // Safety check: Ensure the response wasn't empty due to other reasons like safety settings
+    if (!data.candidates || !data.candidates[0].content || !data.candidates[0].content.parts) {
+        // This handles cases where the model returns a valid response but with no text content
+        throw new Error("Invalid or empty response from Gemini API for title generation.");
+    }
+    
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
