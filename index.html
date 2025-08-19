@@ -292,12 +292,10 @@
     }
 
     async function handleSendMessage() {
-        console.log("DEBUG: handleSendMessage triggered."); // DEBUG LOG
         const userMessage = userInput.value.trim();
         if (!userMessage) return;
 
         const isNewChat = !currentChatId;
-        console.log("DEBUG: Is this a new chat?", isNewChat); // DEBUG LOG
         let currentChatObject;
 
         if (isNewChat) {
@@ -380,15 +378,8 @@
             currentChatObject.history = currentChatHistory;
             saveAllChats();
 
-            // --- DEBUGGING THE RENAME LOGIC ---
-            console.log("DEBUG: Bot response received. Checking if rename is needed."); // DEBUG LOG
-            const needsRenaming = currentChatObject.title === "New Chat";
-            const isSubstantial = isSubstantialMessage(userMessage);
-            console.log("DEBUG: Does it need renaming?", needsRenaming); // DEBUG LOG
-            console.log("DEBUG: Is the message substantial?", isSubstantial); // DEBUG LOG
-
-            if (needsRenaming && isSubstantial) {
-                console.log("DEBUG: Condition met. Calling renameChatWithAI..."); // DEBUG LOG
+            // --- CORRECTED RENAME LOGIC ---
+            if (isNewChat && isSubstantialMessage(userMessage)) {
                 renameChatWithAI(currentChatObject);
             }
 
