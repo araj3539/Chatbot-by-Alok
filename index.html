@@ -4,134 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbot by Alok</title>
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Marked.js for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        /* Custom styles for the chatbot */
-        body {
-            font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Prevent scrolling on the body */
-        }
-        /* Custom scrollbar for a cleaner look */
-        #chat-container::-webkit-scrollbar,
-        #chat-history-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        #chat-container::-webkit-scrollbar-track,
-        #chat-history-list::-webkit-scrollbar-track {
-            background: #1f2937; /* gray-800 */
-        }
-        #chat-container::-webkit-scrollbar-thumb,
-        #chat-history-list::-webkit-scrollbar-thumb {
-            background: #4b5563; /* gray-600 */
-            border-radius: 3px;
-        }
-        #chat-container::-webkit-scrollbar-thumb:hover,
-        #chat-history-list::-webkit-scrollbar-thumb:hover {
-            background: #6b7280; /* gray-500 */
-        }
-        .chat-bubble {
-            max-width: 95%;
-            word-wrap: break-word;
-        }
-        .user-bubble {
-            background-color: #3b82f6; /* blue-500 */
-            color: white;
-        }
-        .bot-bubble {
-            background-color: #4b5563; /* gray-600 */
-            color: #f3f4f6; /* gray-100 */
-        }
-        /* Typing indicator animation */
-        .typing-indicator span { height: 8px; width: 8px; float: left; margin: 0 1px; background-color: #9E9EA1; display: block; border-radius: 50%; opacity: 0.4; animation: 1s blink infinite; }
-        .typing-indicator span:nth-child(2) { animation-delay: .2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: .4s; }
-        @keyframes blink { 50% { opacity: 1; } }
-
-        /* Styles for rendered markdown content */
-        .bot-bubble h1, .bot-bubble h2, .bot-bubble h3 { font-weight: 700; margin-top: 1em; margin-bottom: 0.5em; }
-        .bot-bubble h1 { font-size: 1.2em; } .bot-bubble h2 { font-size: 1.1em; } .bot-bubble h3 { font-size: 1.0em; }
-        .bot-bubble ul, .bot-bubble ol { padding-left: 1.5rem; margin: 0.5em 0; }
-        .bot-bubble ul { list-style-type: disc; } .bot-bubble ol { list-style-type: decimal; }
-        .bot-bubble li { margin-bottom: 0.25em; }
-        .bot-bubble pre { background-color: #111827; color: #e5e7eb; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.75em 0; font-size: 0.9em; }
-        .bot-bubble code { font-family: monospace; background-color: rgba(0,0,0,0.2); padding: 2px 5px; border-radius: 4px; }
-        .bot-bubble pre code { background-color: transparent; padding: 0; }
-        .bot-bubble blockquote { border-left: 4px solid #9ca3af; padding-left: 1rem; margin: 0.75em 0; color: #d1d5db; font-style: italic; }
-        .bot-bubble a { color: #60a5fa; text-decoration: underline; }
-        .bot-bubble a:hover { text-decoration: none; }
-        .bot-bubble p { margin-bottom: 0.5em; }
-
-        /* Styles for chat history delete button */
-        .history-item .delete-btn {
-            display: none; /* Hidden by default */
-        }
-        .history-item:hover .delete-btn {
-            display: inline-block; /* Show on hover */
-        }
+        body { font-family: 'Inter', sans-serif; overflow: hidden; }
+        #chat-container::-webkit-scrollbar, #chat-history-list::-webkit-scrollbar { width: 6px; }
+        #chat-container::-webkit-scrollbar-track, #chat-history-list::-webkit-scrollbar-track { background: #1f2937; }
+        #chat-container::-webkit-scrollbar-thumb, #chat-history-list::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        #chat-container::-webkit-scrollbar-thumb:hover, #chat-history-list::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .chat-bubble { max-width: 95%; word-wrap: break-word; }
+        .user-bubble { background-color: #3b82f6; color: white; }
+        .bot-bubble { background-color: #4b5563; color: #f3f4f6; }
+        .history-item .delete-btn { display: none; }
+        .history-item:hover .delete-btn { display: inline-block; }
     </style>
 </head>
 <body class="bg-gray-800 text-white">
 
     <div id="app-container" class="relative flex h-screen">
-        <!-- Overlay for mobile sidebar -->
         <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden"></div>
-
-        <!-- Left Sidebar for Chat History -->
         <aside id="sidebar" class="w-64 bg-gray-900 p-4 flex flex-col fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-30">
             <button id="new-chat-btn" class="flex items-center justify-between p-3 rounded-lg text-left w-full hover:bg-gray-700 transition-colors duration-200 mb-4">
-                <div class="flex items-center">
-                    <i class="fas fa-robot mr-3"></i>
-                    <span>New Chat</span>
-                </div>
+                <div class="flex items-center"><i class="fas fa-robot mr-3"></i><span>New Chat</span></div>
                 <i class="fas fa-plus"></i>
             </button>
             <h2 class="mt-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Chat History</h2>
-            <div id="chat-history-list" class="flex-1 overflow-y-auto space-y-2">
-                <!-- Chat history items will be added here dynamically by JavaScript -->
-            </div>
+            <div id="chat-history-list" class="flex-1 overflow-y-auto space-y-2"></div>
         </aside>
 
-        <!-- Main Chat Area -->
         <div class="flex-1 flex flex-col">
-            <!-- Header Section -->
             <header class="bg-gray-800 p-4 flex items-center justify-center border-b border-gray-700">
                 <div class="w-full max-w-4xl flex items-center justify-between">
-                    <!-- Mobile Menu Button -->
-                    <button id="menu-btn" class="md:hidden text-white mr-4">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
-                    
+                    <button id="menu-btn" class="md:hidden text-white mr-4"><i class="fas fa-bars text-xl"></i></button>
                     <div class="flex items-center space-x-4">
-                        <div class="p-2 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-full">
-                            <i class="fas fa-robot text-white text-xl"></i>
-                        </div>
+                        <div class="p-2 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-full"><i class="fas fa-robot text-white text-xl"></i></div>
                         <div>
                             <h1 class="text-xl font-bold text-white">NamasteAI</h1>
-                            <p class="text-sm text-green-400 flex items-center">
-                                <span class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
-                                Online
-                            </p>
+                            <p class="text-sm text-green-400 flex items-center"><span class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>Online</p>
                         </div>
                     </div>
-                    <div class="w-8 md:hidden"></div> <!-- Spacer to balance header -->
+                    <div class="w-8 md:hidden"></div>
                 </div>
             </header>
 
-            <!-- Chat Messages Container -->
-            <main id="chat-container" class="flex-1 p-6 overflow-y-auto space-y-4 w-full max-w-4xl mx-auto">
-                <!-- Messages will be appended here by JavaScript -->
-            </main>
+            <main id="chat-container" class="flex-1 p-6 overflow-y-auto space-y-4 w-full max-w-4xl mx-auto"></main>
 
-            <!-- Input Section -->
             <footer class="p-4 bg-gray-800/80 backdrop-blur-sm border-t border-gray-700">
                 <div class="w-full max-w-4xl mx-auto">
                     <div class="flex items-center bg-gray-700 rounded-full p-2">
@@ -157,7 +78,7 @@
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
 
-        const GEMINI_API_KEY = "AIzaSyA9TP1HPtuKH1_k-r60v0RI5coVuPUtRfE"; // PASTE YOUR API KEY HERE
+        // --- API KEY IS REMOVED FROM HERE FOR SECURITY ---
 
         const systemInstruction = {
             role: "system",
@@ -166,58 +87,32 @@
             }]
         };
         
-        // --- State Management ---
+        // --- State Management & UI Rendering (No changes needed here) ---
         let currentChatHistory = [];
         let allChats = [];
         let currentChatId = null;
-
-        // --- Local Storage Functions ---
-        const saveAllChats = () => {
-            if (allChats.length > 50) {
-                allChats = allChats.slice(allChats.length - 50);
-            }
-            localStorage.setItem('aiTutorAllChats', JSON.stringify(allChats));
-        };
-
-        const loadAllChats = () => {
-            const savedChats = localStorage.getItem('aiTutorAllChats');
-            allChats = savedChats ? JSON.parse(savedChats) : [];
-        };
-
-        // --- UI Rendering Functions ---
+        const saveAllChats = () => { if (allChats.length > 50) allChats = allChats.slice(allChats.length - 50); localStorage.setItem('aiTutorAllChats', JSON.stringify(allChats)); };
+        const loadAllChats = () => { allChats = JSON.parse(localStorage.getItem('aiTutorAllChats')) || []; };
         const renderChatHistoryList = () => {
             chatHistoryList.innerHTML = '';
             allChats.forEach(chat => {
                 const item = document.createElement('div');
                 item.classList.add('history-item', 'relative');
-                
                 const link = document.createElement('a');
                 link.href = '#';
                 link.textContent = chat.title;
                 link.classList.add('block', 'p-3', 'rounded-lg', 'truncate', 'hover:bg-gray-700', 'transition-colors', 'duration-200', 'w-full');
-                if (chat.id === currentChatId) {
-                    link.classList.add('bg-gray-700/50');
-                }
-                link.onclick = (e) => {
-                    e.preventDefault();
-                    loadChat(chat.id);
-                    closeSidebar();
-                };
-
+                if (chat.id === currentChatId) link.classList.add('bg-gray-700/50');
+                link.onclick = (e) => { e.preventDefault(); loadChat(chat.id); closeSidebar(); };
                 const deleteBtn = document.createElement('button');
                 deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
                 deleteBtn.classList.add('delete-btn', 'absolute', 'right-2', 'top-1/2', '-translate-y-1/2', 'text-gray-400', 'hover:text-red-500', 'p-1');
-                deleteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    deleteChat(chat.id);
-                };
-
+                deleteBtn.onclick = (e) => { e.stopPropagation(); deleteChat(chat.id); };
                 item.appendChild(link);
                 item.appendChild(deleteBtn);
                 chatHistoryList.prepend(item);
             });
         };
-
         const renderChatMessages = () => {
             chatContainer.innerHTML = '';
             currentChatHistory.forEach(msg => {
@@ -229,76 +124,31 @@
                 }
             });
         };
-
         function appendMessage(message, sender) {
             const messageWrapper = document.createElement('div');
             messageWrapper.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start');
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('chat-bubble', 'p-4', 'rounded-2xl', sender === 'user' ? 'user-bubble' : 'bot-bubble', 'shadow-md');
-            if (sender === 'user') {
-                messageBubble.textContent = message;
-            } else {
-                messageBubble.innerHTML = message;
-            }
+            if (sender === 'user') messageBubble.textContent = message;
+            else messageBubble.innerHTML = message;
             messageWrapper.appendChild(messageBubble);
             chatContainer.appendChild(messageWrapper);
             chatContainer.scrollTop = chatContainer.scrollHeight;
+            return messageBubble;
         }
-        
-        function showTypingIndicator(show) {
-            let indicator = document.getElementById('typing-indicator');
-            if (show) {
-                if (!indicator) {
-                    indicator = document.createElement('div');
-                    indicator.id = 'typing-indicator';
-                    indicator.classList.add('flex', 'justify-start');
-                    indicator.innerHTML = `<div class="chat-bubble bot-bubble p-4 rounded-2xl shadow-md"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
-                    chatContainer.appendChild(indicator);
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                }
-            } else {
-                if (indicator) indicator.remove();
-            }
+        function showTypingIndicator() {
+            return appendMessage('<div class="spinner"></div>', 'bot');
         }
 
-        // --- Centralized Gemini API Call Function ---
-        async function callGeminiAPI(payload) {
-            if (!GEMINI_API_KEY) {
-                throw new Error("Please add your Gemini API Key in the script.");
-            }
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
-            
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error.message || `HTTP error! status: ${response.status}`);
-            }
-            const result = await response.json();
-            if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
-                return result.candidates[0].content.parts[0].text;
-            } else {
-                throw new Error("Invalid response structure from API.");
-            }
-        }
-
-        // --- Chat Logic Functions ---
+        // --- Chat Logic ---
         const startNewChat = () => {
             currentChatId = null;
-            const welcomeMessage = "Hello! I'm your AI Tutor. How can I help you with your studies today?";
-            currentChatHistory = [
-                systemInstruction,
-                { role: "model", parts: [{ text: welcomeMessage }] }
-            ];
+            const welcomeMessage = "Hello! I'm NamasteAI, your AI Tutor created by Alok Raj. How can I help you with your studies today?";
+            currentChatHistory = [systemInstruction, { role: "model", parts: [{ text: welcomeMessage }] }];
             renderChatMessages();
-            renderChatHistoryList(); // Deselects any active chat
+            renderChatHistoryList();
             closeSidebar();
         };
-
         const loadChat = (chatId) => {
             const chat = allChats.find(c => c.id === chatId);
             if (chat) {
@@ -308,100 +158,75 @@
                 renderChatHistoryList();
             }
         };
-
         const deleteChat = (chatId) => {
             allChats = allChats.filter(c => c.id !== chatId);
             saveAllChats();
             if (currentChatId === chatId) {
-                if (allChats.length > 0) {
-                    loadChat(allChats[allChats.length - 1].id);
-                } else {
-                    startNewChat();
-                }
+                if (allChats.length > 0) loadChat(allChats[allChats.length - 1].id);
+                else startNewChat();
             }
             renderChatHistoryList();
         };
 
-        function isSubstantialMessage(message) {
-            const genericGreetings = ['hi', 'hello', 'hey', 'yo', 'sup', 'what\'s up', 'good morning', 'good afternoon', 'good evening'];
-            const normalizedMessage = message.toLowerCase().trim().replace(/[.,!?;]/g, '');
-            // A message is substantial if it's not a generic greeting OR if it's longer than 3 words.
-            return !genericGreetings.includes(normalizedMessage) || message.split(' ').length > 3;
-        }
-
-        async function renameChatWithAI(chatObject) {
-            try {
-                // Use more of the conversation for better context
-                const conversationForTitle = chatObject.history.slice(1, 5).map(m => `${m.role}: ${m.parts[0].text}`).join('\n');
-                // --- UPDATED PROMPT ---
-                const prompt = `Based on the following conversation, create a short, concise title (4-5 words maximum). The title should be about the main subject. Do not include "AI Tutor", "Chatbot", or use quotes. Just return the title text.\n\nConversation:\n${conversationForTitle}`;
-                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
-                const newTitle = await callGeminiAPI(payload);
-                chatObject.title = newTitle.trim().replace(/"/g, '');
-                saveAllChats();
-                renderChatHistoryList();
-            } catch (error) {
-                console.error("Error auto-renaming chat:", error);
-            }
-        }
-
+        // --- CORRECTED & SECURE SEND MESSAGE FUNCTION ---
         async function handleSendMessage() {
             const userMessage = userInput.value.trim();
             if (!userMessage) return;
 
-            const isNewChat = !currentChatId;
-            let currentChatObject;
-
-            if (isNewChat) {
+            if (!currentChatId) {
                 currentChatId = Date.now().toString();
-                const newChat = {
-                    id: currentChatId,
-                    title: "New Chat", // Start with a generic title
-                    history: [...currentChatHistory]
-                };
+                const newChat = { id: currentChatId, title: userMessage.substring(0, 30) + (userMessage.length > 30 ? '...' : ''), history: [...currentChatHistory] };
                 allChats.push(newChat);
-                currentChatObject = newChat;
-            } else {
-                currentChatObject = allChats.find(c => c.id === currentChatId);
+                renderChatHistoryList();
             }
             
             appendMessage(userMessage, 'user');
             currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-            currentChatObject.history = currentChatHistory;
             
+            const currentChatObject = allChats.find(c => c.id === currentChatId);
+            currentChatObject.history = [...currentChatHistory];
             saveAllChats();
-            if(isNewChat) renderChatHistoryList();
             
             userInput.value = '';
-            showTypingIndicator(true);
+            const typingIndicator = showTypingIndicator();
 
             try {
-                const payload = {
-                    contents: currentChatHistory.slice(1).map(msg => ({ role: msg.role === 'model' ? 'model' : 'user', parts: msg.parts })),
-                    system_instruction: systemInstruction
-                };
-                const botMessage = await callGeminiAPI(payload);
-                showTypingIndicator(false);
-                const formattedBotMessage = marked.parse(botMessage);
-                appendMessage(formattedBotMessage, 'bot');
-                currentChatHistory.push({ role: "model", parts: [{ text: botMessage }] });
-                currentChatObject.history = currentChatHistory;
-                saveAllChats();
+                // --- SECURE: Pointing to your own backend endpoint ---
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        history: currentChatHistory.slice(1).map(msg => ({ 
+                            role: msg.role === 'model' ? 'model' : 'user', 
+                            parts: msg.parts 
+                        })),
+                        systemInstruction: systemInstruction
+                    })
+                });
 
-                // --- REFINED AUTO-RENAME LOGIC ---
-                const needsRenaming = currentChatObject.title === "New Chat";
-                if (needsRenaming && isSubstantialMessage(userMessage)) {
-                    renameChatWithAI(currentChatObject);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
                 }
 
+                const result = await response.json();
+                let botMessage = "Sorry, I couldn't get a response.";
+                if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
+                    botMessage = result.candidates[0].content.parts[0].text;
+                }
+                
+                typingIndicator.remove(); // Remove the spinner
+                appendMessage(marked.parse(botMessage), 'bot');
+                currentChatHistory.push({ role: "model", parts: [{ text: botMessage }] });
+                currentChatObject.history = [...currentChatHistory];
+                saveAllChats();
+
             } catch (error) {
-                console.error("Error calling Gemini API:", error);
-                showTypingIndicator(false);
-                appendMessage(`<strong>Error:</strong> ${error.message}`, 'bot');
+                typingIndicator.innerHTML = `<strong>Error:</strong> ${error.message}`;
             }
         }
 
-        // --- Mobile Viewport & Sidebar Logic ---
+        // --- Mobile Viewport & Sidebar Logic (No changes) ---
         const setAppHeight = () => { appContainer.style.height = `${window.innerHeight}px`; };
         const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
         const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
@@ -415,13 +240,16 @@
         window.addEventListener('resize', setAppHeight);
 
         window.onload = () => {
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 3px solid #fff; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            `;
+            document.head.appendChild(style);
             setAppHeight();
             loadAllChats();
-            if (allChats.length > 0) {
-                loadChat(allChats[allChats.length - 1].id); // Load the most recent chat
-            } else {
-                startNewChat(); // Or start a fresh one if there's no history
-            }
+            if (allChats.length > 0) loadChat(allChats[allChats.length - 1].id);
+            else startNewChat();
         };
     </script>
 </body>
