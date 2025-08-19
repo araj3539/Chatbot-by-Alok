@@ -297,21 +297,26 @@
         // --- Logic for creating or updating chat history ---
         if (isNewChat) {
             const newChatId = Date.now().toString();
-            currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+            // Start the history for the new chat with the system instruction and welcome message
+            currentChatHistory = [
+                systemInstruction,
+                { role: "model", parts: [{ text: "Hello! I'm NamasteAI, your AI Tutor created by Alok Raj. How can I help you with your studies today?" }] }
+            ];
             const newChat = {
                 id: newChatId,
                 title: "New Chat",
-                history: [...currentChatHistory]
+                history: [...currentChatHistory] // Use a copy
             };
             allChats.push(newChat);
             currentChatObject = newChat;
             currentChatId = newChatId;
         } else {
             currentChatObject = allChats.find(c => c.id === currentChatId);
-            currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-            currentChatObject.history = [...currentChatHistory];
         }
-
+        
+        // Add user message to the current history and render it
+        currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+        currentChatObject.history = [...currentChatHistory];
         renderChatMessages();
         saveAllChats();
         if (isNewChat) renderChatHistoryList();
@@ -329,7 +334,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    history: currentChatHistory.slice(1), // Send the full history including the new user message
+                    history: currentChatHistory.slice(1),
                     systemInstruction: systemInstruction
                 })
             });
