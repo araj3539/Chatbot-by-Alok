@@ -43,6 +43,7 @@ export default async function handler(req) {
     }
 
     const data = await googleResponse.json();
+    console.debug(data);
     // Edge functions require returning a `Response` object
     return new Response(JSON.stringify(data), {
       status: 200,
