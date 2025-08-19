@@ -1,35 +1,62 @@
 // File: /api/chat.js
 
-export default async function handler(req, res) {
+// This function tells Vercel to use the Edge runtime, which is faster and supports streaming.
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(req) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
-  const { history, systemInstruction } = req.body;
-  const apiKey = process.env.AIzaSyA9TP1HPtuKH1_k-r60v0RI5coVuPUtRfE; // Accessing the secure key
-
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
   try {
+    const { history, systemInstruction } = await req.json();
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      throw new Error('API key is not configured.');
+    }
+
+    // Use the streaming endpoint by adding ":streamGenerateContent"
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:streamGenerateContent?key=${apiKey}&alt=sse`;
+
     const payload = {
       contents: history,
       system_instruction: systemInstruction,
     };
 
-    const response = await fetch(apiUrl, {
+    // Make the fetch request to the Google API
+    const googleResponse = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      },
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      return res.status(response.status).json({ error: errorData.error.message });
+    if (!googleResponse.ok) {
+      const errorData = await googleResponse.json();
+      throw new Error(errorData.error.message || 'Failed to fetch from Google API');
     }
 
-    const data = await response.json();
-    res.status(200).json(data);
+    // Return the streaming response directly to the client
+    return new Response(googleResponse.body, {
+      headers: {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
