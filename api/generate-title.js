@@ -26,7 +26,7 @@ export default async function handler(req) {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generation_config: {
         "temperature": 0.3,
-        "max_output_tokens": 80, // Increased for a larger safety buffer
+        "max_output_tokens": 256, // Increased for a larger safety buffer
       }
     };
 
