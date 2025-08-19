@@ -277,7 +277,6 @@
             const result = await response.json();
             if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
                 const newTitle = result.candidates[0].content.parts[0].text;
-                // Fallback in case the AI returns an empty title
                 chatObject.title = newTitle.trim().replace(/"/g, '') || "Titled Chat";
                 saveAllChats();
                 renderChatHistoryList();
@@ -296,7 +295,7 @@
 
         if (isNewChat) {
             const newChatId = Date.now().toString();
-            currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+            // Create the new chat object with the welcome message
             const newChat = {
                 id: newChatId,
                 title: "New Chat",
@@ -305,15 +304,16 @@
             allChats.push(newChat);
             currentChatObject = newChat;
             currentChatId = newChatId;
-            renderChatHistoryList();
         } else {
             currentChatObject = allChats.find(c => c.id === currentChatId);
-            currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-            currentChatObject.history = currentChatHistory;
         }
         
+        // Add user message to the history and then render
+        currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+        currentChatObject.history = [...currentChatHistory];
         renderChatMessages();
         saveAllChats();
+        if (isNewChat) renderChatHistoryList();
         
         userInput.value = '';
         sendBtn.disabled = true;
@@ -376,7 +376,7 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
             
             currentChatHistory.push({ role: "model", parts: [{ text: fullBotResponse }] });
-            currentChatObject.history = currentChatHistory;
+            currentChatObject.history = [...currentChatHistory];
             saveAllChats();
 
             if (isNewChat && isSubstantialMessage(userMessage)) {
@@ -431,5 +431,6 @@
         }
     };
     </script>
+
 </body>
 </html>
