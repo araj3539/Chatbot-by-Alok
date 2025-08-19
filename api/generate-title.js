@@ -1,6 +1,5 @@
 // File: /api/generate-title.js
 
-// This new line tells Vercel to run this on the faster Edge network.
 export const config = {
   runtime: 'edge',
 };
@@ -27,7 +26,7 @@ export default async function handler(req) {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generation_config: {
         "temperature": 0.3,
-        "max_output_tokens": 20,
+        "max_output_tokens": 30, // Increased for safety
       }
     };
 
@@ -43,8 +42,6 @@ export default async function handler(req) {
     }
 
     const data = await googleResponse.json();
-    console.debug(data);
-    // Edge functions require returning a `Response` object
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
