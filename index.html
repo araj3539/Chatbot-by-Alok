@@ -277,7 +277,8 @@
             const result = await response.json();
             if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
                 const newTitle = result.candidates[0].content.parts[0].text;
-                chatObject.title = newTitle.trim().replace(/"/g, '');
+                // Fallback in case the AI returns an empty title
+                chatObject.title = newTitle.trim().replace(/"/g, '') || "Titled Chat";
                 saveAllChats();
                 renderChatHistoryList();
             }
@@ -290,24 +291,29 @@
         const userMessage = userInput.value.trim();
         if (!userMessage) return;
 
-        const isNewChat = !currentChatId;
         let currentChatObject;
+        const isNewChat = !currentChatId;
 
         if (isNewChat) {
-            currentChatId = Date.now().toString();
-            const newChat = { id: currentChatId, title: "New Chat", history: [...currentChatHistory] };
+            const newChatId = Date.now().toString();
+            currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+            const newChat = {
+                id: newChatId,
+                title: "New Chat",
+                history: [...currentChatHistory]
+            };
             allChats.push(newChat);
             currentChatObject = newChat;
+            currentChatId = newChatId;
+            renderChatHistoryList();
         } else {
             currentChatObject = allChats.find(c => c.id === currentChatId);
+            currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+            currentChatObject.history = currentChatHistory;
         }
         
-        appendMessage(userMessage, 'user');
-        currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-        currentChatObject.history = currentChatHistory;
-        
+        renderChatMessages();
         saveAllChats();
-        if(isNewChat) renderChatHistoryList();
         
         userInput.value = '';
         sendBtn.disabled = true;
@@ -373,9 +379,7 @@
             currentChatObject.history = currentChatHistory;
             saveAllChats();
 
-            // --- FINAL CORRECTED RENAME LOGIC ---
-            const needsRenaming = currentChatObject.title === "New Chat";
-            if (needsRenaming && isSubstantialMessage(userMessage)) {
+            if (isNewChat && isSubstantialMessage(userMessage)) {
                 renameChatWithAI(currentChatObject);
             }
 
