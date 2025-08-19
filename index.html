@@ -286,6 +286,7 @@
         }
     }
 
+    // --- FINAL REFACTORED SEND MESSAGE FUNCTION ---
     async function handleSendMessage() {
         const userMessage = userInput.value.trim();
         if (!userMessage) return;
@@ -293,9 +294,10 @@
         let currentChatObject;
         const isNewChat = !currentChatId;
 
+        // --- Logic for creating or updating chat history ---
         if (isNewChat) {
             const newChatId = Date.now().toString();
-            // Create the new chat object with the welcome message
+            currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
             const newChat = {
                 id: newChatId,
                 title: "New Chat",
@@ -306,11 +308,10 @@
             currentChatId = newChatId;
         } else {
             currentChatObject = allChats.find(c => c.id === currentChatId);
+            currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+            currentChatObject.history = [...currentChatHistory];
         }
-        
-        // Add user message to the history and then render
-        currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-        currentChatObject.history = [...currentChatHistory];
+
         renderChatMessages();
         saveAllChats();
         if (isNewChat) renderChatHistoryList();
@@ -328,10 +329,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    history: currentChatHistory.slice(1).map(msg => ({ 
-                        role: msg.role === 'model' ? 'model' : 'user', 
-                        parts: msg.parts 
-                    })),
+                    history: currentChatHistory.slice(1), // Send the full history including the new user message
                     systemInstruction: systemInstruction
                 })
             });
@@ -431,6 +429,5 @@
         }
     };
     </script>
-
 </body>
 </html>
