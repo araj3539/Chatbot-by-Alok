@@ -262,7 +262,6 @@
     }
 
     async function renameChatWithAI(chatObject) {
-        console.log("DEBUG: renameChatWithAI function was called."); // DEBUG LOG
         try {
             const conversationForTitle = chatObject.history.slice(1, 5).map(m => `${m.role}: ${m.parts[0].text}`).join('\n');
             const prompt = `Based on the following conversation, create a short, concise title (4-5 words maximum). The title should be about the main subject. Do not include "AI Tutor", "Chatbot", or use quotes. Just return the title text.\n\nConversation:\n${conversationForTitle}`;
@@ -273,15 +272,11 @@
                 body: JSON.stringify({ prompt: prompt })
             });
 
-            if (!response.ok) {
-                console.error("DEBUG: Response from /api/generate-title was not OK", response.status); // DEBUG LOG
-                return;
-            }
+            if (!response.ok) return;
 
             const result = await response.json();
             if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
                 const newTitle = result.candidates[0].content.parts[0].text;
-                console.log("DEBUG: New title received:", newTitle); // DEBUG LOG
                 chatObject.title = newTitle.trim().replace(/"/g, '');
                 saveAllChats();
                 renderChatHistoryList();
@@ -378,8 +373,9 @@
             currentChatObject.history = currentChatHistory;
             saveAllChats();
 
-            // --- CORRECTED RENAME LOGIC ---
-            if (isNewChat && isSubstantialMessage(userMessage)) {
+            // --- FINAL CORRECTED RENAME LOGIC ---
+            const needsRenaming = currentChatObject.title === "New Chat";
+            if (needsRenaming && isSubstantialMessage(userMessage)) {
                 renameChatWithAI(currentChatObject);
             }
 
