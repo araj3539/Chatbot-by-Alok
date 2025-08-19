@@ -157,7 +157,6 @@
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
 
-        const GEMINI_API_KEY = "AIzaSyA9TP1HPtuKH1_k-r60v0RI5coVuPUtRfE"; // PASTE YOUR API KEY HERE
 
         const systemInstruction = {
             role: "system",
@@ -266,7 +265,7 @@
             if (!GEMINI_API_KEY) {
                 throw new Error("Please add your Gemini API Key in the script.");
             }
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
+            const apiUrl = '/api/chat';;
             
             const response = await fetch(apiUrl, {
                 method: 'POST',
