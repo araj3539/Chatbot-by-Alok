@@ -261,11 +261,10 @@
         return !genericGreetings.includes(normalizedMessage) || message.split(' ').length > 3;
     }
 
-    async function renameChatWithAI(chatObject) {
+    async function renameChatWithAI(chatObject, firstUserMessage) {
         try {
-            // Use a shorter, more efficient snippet for the title prompt
-            const conversationForTitle = chatObject.history.slice(1, 3).map(m => `${m.role}: ${m.parts[0].text}`).join('\n');
-            const prompt = `Based on the following conversation, create a short, concise title (4-5 words maximum). The title should be about the main subject. Do not include "AI Tutor", "Chatbot", or use quotes. Just return the title text.\n\nConversation:\n${conversationForTitle}`;
+            // --- FINAL FIX: Send only the first user message for a concise prompt ---
+            const prompt = `Based on the following user query, create a short, concise title (4-5 words maximum). The title should be about the main subject. Do not include "AI Tutor", "Chatbot", or use quotes. Just return the title text.\n\nQuery:\n${firstUserMessage}`;
             
             const response = await fetch('/api/generate-title', {
                 method: 'POST',
@@ -287,7 +286,6 @@
         }
     }
 
-    // --- FINAL REFACTORED SEND MESSAGE FUNCTION ---
     async function handleSendMessage() {
         const userMessage = userInput.value.trim();
         if (!userMessage) return;
@@ -297,7 +295,6 @@
 
         if (isNewChat) {
             const newChatId = Date.now().toString();
-            // Start the history for the new chat
             currentChatHistory = [
                 systemInstruction,
                 { role: "model", parts: [{ text: "Hello! I'm NamasteAI, your AI Tutor created by Alok Raj. How can I help you with your studies today?" }] }
@@ -314,7 +311,6 @@
             currentChatObject = allChats.find(c => c.id === currentChatId);
         }
         
-        // Add user message to the history and then render
         currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
         currentChatObject.history = [...currentChatHistory];
         renderChatMessages();
@@ -383,7 +379,7 @@
             saveAllChats();
 
             if (isNewChat && isSubstantialMessage(userMessage)) {
-                renameChatWithAI(currentChatObject);
+                renameChatWithAI(currentChatObject, userMessage);
             }
 
         } catch (error) {

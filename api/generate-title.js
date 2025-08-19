@@ -42,7 +42,6 @@ export default async function handler(req) {
     }
 
     const data = await googleResponse.json();
-    console.log(data);
     console.debug(data);
     return new Response(JSON.stringify(data), {
       status: 200,
