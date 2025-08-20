@@ -137,19 +137,35 @@
 
         .bot-bubble pre {
             background-color: #111827;
-            color: #e5e7eb;
+            /* gray-900 */
+            color: #d1d5db;
+            /* gray-300 */
             padding: 1rem;
             border-radius: 0.5rem;
-            overflow-x: auto;
-            margin: 0.75em 0;
+            margin: 1em 0;
             font-size: 0.9em;
+            border: 1px solid #374151;
+            /* gray-700 */
+
+            /* Core wrapping solution */
+            white-space: pre-wrap;
+            /* Allows wrapping */
+            word-wrap: break-word;
+            /* Breaks long words/strings */
+            overflow-wrap: break-word;
+            /* Modern equivalent of word-wrap */
         }
 
-        .bot-bubble code {
-            font-family: monospace;
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 2px 5px;
-            border-radius: 4px;
+        /* This new rule ensures the code inside the block behaves */
+        .bot-bubble pre code {
+            display: block;
+            /* Makes the code element fill the container */
+            max-width: 100%;
+            /* Ensures it doesn't overflow its parent <pre> tag */
+            white-space: pre-wrap;
+            /* Double-ensure wrapping */
+            word-break: break-word;
+            /* More aggressive breaking if needed */
         }
 
         .bot-bubble pre code {
