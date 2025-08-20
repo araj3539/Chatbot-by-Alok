@@ -269,6 +269,11 @@
                     <div class="flex items-center bg-gray-700 rounded-full p-2">
                         <input type="text" id="user-input" placeholder="Ask me anything..."
                             class="flex-1 bg-transparent text-white placeholder-gray-400 focus:outline-none px-4">
+                        <button id="mic-btn"
+                            class="text-white rounded-full p-3 hover:bg-gray-600 transition-colors duration-300"
+                            title="Use Microphone">
+                            <i class="fas fa-microphone"></i>
+                        </button>
                         <button id="send-btn"
                             class="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full p-3 hover:opacity-90 transition-opacity duration-300">
                             <i class="fas fa-paper-plane"></i>
@@ -294,6 +299,7 @@
         const menuBtn = document.getElementById('menu-btn');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const micBtn = document.getElementById('mic-btn');
 
         // The API Key is now removed from here and lives securely on Vercel.
 
@@ -569,6 +575,56 @@
                 startNewChat();
             }
         };
+        // --- Speech to Text (Voice Recognition) Logic ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Process a single utterance
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            let isRecognizing = false;
+
+            micBtn.addEventListener('click', () => {
+                if (isRecognizing) {
+                    recognition.stop();
+                    return;
+                }
+                recognition.start();
+            });
+
+            recognition.onstart = () => {
+                isRecognizing = true;
+                micBtn.classList.add('text-red-500'); // Visual feedback: recording
+                micBtn.querySelector('i').classList.add('fa-beat');
+                userInput.placeholder = "Listening...";
+            };
+
+            recognition.onend = () => {
+                isRecognizing = false;
+                micBtn.classList.remove('text-red-500');
+                micBtn.querySelector('i').classList.remove('fa-beat');
+                userInput.placeholder = "Ask me anything...";
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userInput.value = transcript;
+                // Optional: automatically send the message after transcription
+                // handleSendMessage(); 
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+                userInput.placeholder = "Sorry, I couldn't hear that.";
+            };
+
+        } else {
+            console.log("Speech recognition not supported in this browser.");
+            micBtn.style.display = 'none'; // Hide button if not supported
+        }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
     <script
