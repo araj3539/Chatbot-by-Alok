@@ -241,8 +241,9 @@
             </header>
 
             <!-- Chat Messages Container -->
-            <main id="chat-container" class="flex-1 p-6 overflow-y-auto space-y-4 w-full max-w-4xl mx-auto">
-                <!-- Messages will be appended here by JavaScript -->
+            <main id="chat-container" class="flex-1 overflow-y-auto">
+                <div id="message-list" class="w-full max-w-4xl mx-auto p-6 space-y-4">
+                </div>
             </main>
 
             <!-- Input Section -->
@@ -268,6 +269,7 @@
         // DOM Element References
         const appContainer = document.getElementById('app-container');
         const chatContainer = document.getElementById('chat-container');
+        const messageList = document.getElementById('message-list');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
         const newChatBtn = document.getElementById('new-chat-btn');
@@ -338,7 +340,7 @@
         };
 
         const renderChatMessages = () => {
-            chatContainer.innerHTML = '';
+            messageList.innerHTML = '';
             currentChatHistory.forEach(msg => {
                 if (msg.role !== 'system') {
                     const sender = msg.role === 'user' ? 'user' : 'bot';
@@ -361,19 +363,19 @@
                 messageBubble.innerHTML = message;
             }
             messageWrapper.appendChild(messageBubble);
-            chatContainer.appendChild(messageWrapper);
+            messageList.appendChild(messageWrapper);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         function showTypingIndicator(show) {
-            let indicator = document.getElementById('typing-indicator');
+            let indicator = messageList.querySelector('#typing-indicator');;
             if (show) {
                 if (!indicator) {
                     indicator = document.createElement('div');
                     indicator.id = 'typing-indicator';
                     indicator.classList.add('flex', 'justify-start');
                     indicator.innerHTML = `<div class="chat-bubble bot-bubble p-4 rounded-2xl shadow-md"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
-                    chatContainer.appendChild(indicator);
+                    messageList.appendChild(indicator);
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 }
             } else {
@@ -552,7 +554,8 @@
         };
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
 
 </body>
 
