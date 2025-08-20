@@ -221,10 +221,10 @@
             </button>
             <h2 class="mt-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Chat History</h2>
             <div id="chat-history-list" class="flex-1 overflow-y-auto space-y-2">
-            </div>
+                </div>
         </aside>
 
-        <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex-1 flex flex-col">
             <header class="bg-gray-800 p-4 flex items-center justify-center border-b border-gray-700">
                 <div class="w-full max-w-4xl flex items-center justify-between">
                     <button id="menu-btn" class="md:hidden text-white mr-4">
@@ -243,8 +243,7 @@
                             </p>
                         </div>
                     </div>
-                    <div class="w-8 md:hidden"></div>
-                </div>
+                    <div class="w-8 md:hidden"></div> </div>
             </header>
 
             <main id="chat-container" class="flex-1 overflow-y-auto">
@@ -256,7 +255,7 @@
                 <div class="w-full max-w-4xl mx-auto">
                     <div class="flex items-center bg-gray-700 rounded-full p-2">
                         <input type="text" id="user-input" placeholder="Ask me anything..."
-                            class="flex-1 bg-transparent text-white placeholder-gray-400 focus:outline-none px-4 min-w-0">
+                            class="flex-1 bg-transparent text-white placeholder-gray-400 focus:outline-none px-4">
                         <button id="mic-btn"
                             class="text-white rounded-full p-3 hover:bg-gray-600 transition-colors duration-300"
                             title="Use Microphone">
@@ -475,9 +474,9 @@
 
             const userMessage = userInput.value.trim();
             if (!userMessage) return;
-
+            
             // **FIX**: Set generating state to true
-            isGenerating = true;
+            isGenerating = true; 
 
             const isNewChat = !currentChatId;
             let currentChatObject;
@@ -560,7 +559,7 @@
                 sendBtn.classList.remove('hidden');
                 stopBtn.classList.add('hidden');
                 // **FIX**: Reset generating state to false
-                isGenerating = false;
+                isGenerating = false; 
             }
         }
 
