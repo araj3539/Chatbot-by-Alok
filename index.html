@@ -156,7 +156,13 @@
             /* Modern equivalent of word-wrap */
         }
 
-        /* This new rule ensures the code inside the block behaves */
+        .bot-bubble code {
+            font-family: monospace;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
         .bot-bubble pre code {
             display: block;
             /* Makes the code element fill the container */
@@ -166,11 +172,6 @@
             /* Double-ensure wrapping */
             word-break: break-word;
             /* More aggressive breaking if needed */
-        }
-
-        .bot-bubble pre code {
-            background-color: transparent;
-            padding: 0;
         }
 
         .bot-bubble blockquote {
