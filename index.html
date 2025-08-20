@@ -22,10 +22,6 @@
             /* Prevent scrolling on the body */
         }
 
-        #app-container {
-            overflow-x: hidden;
-        }
-
         /* Custom scrollbar for a cleaner look */
         #chat-container::-webkit-scrollbar,
         #chat-history-list::-webkit-scrollbar {
@@ -225,7 +221,7 @@
             </button>
             <h2 class="mt-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Chat History</h2>
             <div id="chat-history-list" class="flex-1 overflow-y-auto space-y-2">
-            </div>
+                </div>
         </aside>
 
         <div class="flex-1 flex flex-col">
@@ -247,8 +243,7 @@
                             </p>
                         </div>
                     </div>
-                    <div class="w-8 md:hidden"></div>
-                </div>
+                    <div class="w-8 md:hidden"></div> </div>
             </header>
 
             <main id="chat-container" class="flex-1 overflow-y-auto">
@@ -479,9 +474,9 @@
 
             const userMessage = userInput.value.trim();
             if (!userMessage) return;
-
+            
             // **FIX**: Set generating state to true
-            isGenerating = true;
+            isGenerating = true; 
 
             const isNewChat = !currentChatId;
             let currentChatObject;
@@ -564,7 +559,7 @@
                 sendBtn.classList.remove('hidden');
                 stopBtn.classList.add('hidden');
                 // **FIX**: Reset generating state to false
-                isGenerating = false;
+                isGenerating = false; 
             }
         }
 
