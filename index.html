@@ -5,18 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbot by Alok</title>
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Marked.js for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         /* Custom styles for the chatbot */
@@ -143,7 +139,7 @@
             padding: 1rem;
             border-radius: 0.5rem;
             margin: 1em 0;
-            font-size: 0.9em;
+            font-size: 1.1em;
             border: 1px solid #374151;
             /* gray-700 */
 
@@ -211,10 +207,8 @@
 <body class="bg-gray-800 text-white">
 
     <div id="app-container" class="relative flex h-screen">
-        <!-- Overlay for mobile sidebar -->
         <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden"></div>
 
-        <!-- Left Sidebar for Chat History -->
         <aside id="sidebar"
             class="w-64 bg-gray-900 p-4 flex flex-col fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-30">
             <button id="new-chat-btn"
@@ -227,16 +221,12 @@
             </button>
             <h2 class="mt-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Chat History</h2>
             <div id="chat-history-list" class="flex-1 overflow-y-auto space-y-2">
-                <!-- Chat history items will be added here dynamically by JavaScript -->
-            </div>
+                </div>
         </aside>
 
-        <!-- Main Chat Area -->
         <div class="flex-1 flex flex-col">
-            <!-- Header Section -->
             <header class="bg-gray-800 p-4 flex items-center justify-center border-b border-gray-700">
                 <div class="w-full max-w-4xl flex items-center justify-between">
-                    <!-- Mobile Menu Button -->
                     <button id="menu-btn" class="md:hidden text-white mr-4">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
@@ -253,17 +243,14 @@
                             </p>
                         </div>
                     </div>
-                    <div class="w-8 md:hidden"></div> <!-- Spacer to balance header -->
-                </div>
+                    <div class="w-8 md:hidden"></div> </div>
             </header>
 
-            <!-- Chat Messages Container -->
             <main id="chat-container" class="flex-1 overflow-y-auto">
                 <div id="message-list" class="w-full max-w-4xl mx-auto p-6 space-y-4">
                 </div>
             </main>
 
-            <!-- Input Section -->
             <footer class="p-4 bg-gray-800/80 backdrop-blur-sm border-t border-gray-700">
                 <div class="w-full max-w-4xl mx-auto">
                     <div class="flex items-center bg-gray-700 rounded-full p-2">
@@ -277,6 +264,10 @@
                         <button id="send-btn"
                             class="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full p-3 hover:opacity-90 transition-opacity duration-300">
                             <i class="fas fa-paper-plane"></i>
+                        </button>
+                        <button id="stop-btn"
+                            class="bg-red-500 text-white rounded-full p-3 hover:opacity-90 transition-opacity duration-300 hidden">
+                            <i class="fas fa-stop"></i>
                         </button>
                     </div>
                 </div>
@@ -294,14 +285,13 @@
         const messageList = document.getElementById('message-list');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
+        const stopBtn = document.getElementById('stop-btn');
         const newChatBtn = document.getElementById('new-chat-btn');
         const chatHistoryList = document.getElementById('chat-history-list');
         const menuBtn = document.getElementById('menu-btn');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
         const micBtn = document.getElementById('mic-btn');
-
-        // The API Key is now removed from here and lives securely on Vercel.
 
         const systemInstruction = {
             role: "system",
@@ -314,6 +304,8 @@
         let currentChatHistory = [];
         let allChats = [];
         let currentChatId = null;
+        let abortController;
+        let isGenerating = false; // To prevent concurrent submissions
 
         // --- Local Storage Functions ---
         const saveAllChats = () => {
@@ -453,7 +445,6 @@
                 const conversationForTitle = chatObject.history.slice(1, 5).map(m => `${m.role}: ${m.parts[0].text}`).join('\n');
                 const prompt = `Based on the following conversation, create a short, concise title (4-5 words maximum). The title should be about the main subject. Do not include "AI Tutor", "Chatbot", or use quotes. Just return the title text.\n\nConversation:\n${conversationForTitle}`;
 
-                // This API call now also goes through our secure proxy
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -463,7 +454,7 @@
                     })
                 });
 
-                if (!response.ok) return; // Don't worry about errors here, just fail silently.
+                if (!response.ok) return;
 
                 const result = await response.json();
                 if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
@@ -478,8 +469,14 @@
         }
 
         async function handleSendMessage() {
+            // **FIX**: Prevent sending if a message is already being generated
+            if (isGenerating) return;
+
             const userMessage = userInput.value.trim();
             if (!userMessage) return;
+            
+            // **FIX**: Set generating state to true
+            isGenerating = true; 
 
             const isNewChat = !currentChatId;
             let currentChatObject;
@@ -507,8 +504,11 @@
             userInput.value = '';
             showTypingIndicator(true);
 
+            sendBtn.classList.add('hidden');
+            stopBtn.classList.remove('hidden');
+            abortController = new AbortController();
+
             try {
-                // This is the main API call, now pointing to our secure Vercel function
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -518,7 +518,8 @@
                             parts: msg.parts
                         })),
                         systemInstruction: systemInstruction
-                    })
+                    }),
+                    signal: abortController.signal
                 });
 
                 if (!response.ok) {
@@ -547,9 +548,24 @@
                 }
 
             } catch (error) {
-                console.error("Error calling chat API:", error);
+                if (error.name === 'AbortError') {
+                    appendMessage('Generation stopped.', 'bot');
+                } else {
+                    console.error("Error calling chat API:", error);
+                    appendMessage(`<strong>Error:</strong> ${error.message}`, 'bot');
+                }
+            } finally {
                 showTypingIndicator(false);
-                appendMessage(`<strong>Error:</strong> ${error.message}`, 'bot');
+                sendBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+                // **FIX**: Reset generating state to false
+                isGenerating = false; 
+            }
+        }
+
+        function handleStopGeneration() {
+            if (abortController) {
+                abortController.abort();
             }
         }
 
@@ -560,6 +576,7 @@
 
         // --- Event Listeners & Initialization ---
         sendBtn.addEventListener('click', handleSendMessage);
+        stopBtn.addEventListener('click', handleStopGeneration);
         userInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') handleSendMessage(); });
         newChatBtn.addEventListener('click', startNewChat);
         menuBtn.addEventListener('click', openSidebar);
@@ -612,8 +629,6 @@
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 userInput.value = transcript;
-                // Optional: automatically send the message after transcription
-                // handleSendMessage(); 
             };
 
             recognition.onerror = (event) => {
