@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       history[history.length - 1].parts[0].text = `${searchResultsContext}\nPlease use the information above to answer the following question: ${userQuery}`;
   }
 
-  const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+  const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
 
   try {
     const payload = {
