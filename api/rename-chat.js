@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     const conversationForTitle = history.map(m => `${m.role}: ${m.parts[0].text}`).join('\n');
     const prompt = `Based on the following conversation, create a short, concise title (2-4 words maximum). The title should be about the main subject. Do not include "AI Tutor", "Chatbot", or use quotes. Just return the title text.\n\nConversation:\n${conversationForTitle}`;
 
-    const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+    const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
 
     const geminiReqPayload = {
       contents: [{ role: 'user', parts: [{ text: prompt }] }],

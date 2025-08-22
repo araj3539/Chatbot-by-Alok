@@ -15,7 +15,7 @@ const micBtn = document.getElementById('mic-btn');
 const systemInstruction = {
     role: "system",
     parts: [{
-        text: "Your name is NamasteAI created by Alok Raj. You are an AI Tutor Chatbot, an intelligent study companion designed to help students learn, revise, and stay motivated. You act as both a study assistant and a mentor, providing subject explanations, solving doubts, giving practice problems, and offering motivational support to keep learners engaged. when someone do ask about creator then tell name only nothing more about creator."
+        text: "Your name is NamasteAI created by Alok Raj.You are an intelligent chat bot with reasoning capability."
     }]
 };
 
@@ -120,7 +120,7 @@ function showTypingIndicator(show) {
 // --- Chat Logic Functions ---
 const startNewChat = () => {
     currentChatId = null;
-    const welcomeMessage = "Hello! I'm your AI Tutor. How can I help you with your studies today?";
+    const welcomeMessage = "Hello! ,How can I help you today?";
     currentChatHistory = [
         systemInstruction,
         { role: "model", parts: [{ text: welcomeMessage }] }
