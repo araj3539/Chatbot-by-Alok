@@ -45,7 +45,6 @@ export default async function handler(req, res) {
         };
         const queryGenerationResponse = await callGemini(queryGenerationPayload, geminiApiKey);
         const generatedQuery = queryGenerationResponse.candidates[0]?.content?.parts[0]?.text.trim() || query;
-        console.debug(generatedQuery);
 
         // Step 2: Perform the web search with the generated query
         const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${searchApiKey}&cx=${searchEngineId}&q=${encodeURIComponent(generatedQuery)}`;
