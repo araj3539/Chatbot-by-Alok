@@ -30,7 +30,6 @@ export default async function handler(req, res) {
   const isPotentialDateQuery = lowerCaseQuery.includes('date') || lowerCaseQuery.includes('day') || lowerCaseQuery.includes('today');
 
   if ((isPotentialDateQuery || isPotentialTimeQuery)) {
-      console.debug("Datequery is running");
       const now = new Date();
       let responseText = '';
       // Set timezone to India Standard Time
