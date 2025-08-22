@@ -161,24 +161,29 @@ function isSubstantialMessage(message) {
 
 async function renameChatWithAI(chatObject) {
     try {
-        const conversationForTitle = chatObject.history.slice(1, 5).map(m => `${m.role}: ${m.parts[0].text}`).join('\n');
-        const prompt = `Based on the following conversation, create a short, concise title (2-4 words maximum). The title should be about the main subject. Do not include "AI Tutor", "Chatbot", or use quotes. Just return the title text.\n\nConversation:\n${conversationForTitle}`;
+        // We only need to send the relevant part of the history for context
+        const conversationHistory = chatObject.history.slice(1, 5);
 
-        const response = await fetch('/api/chat', {
+        // Call the new, dedicated API endpoint
+        const response = await fetch('/api/rename-chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                history: [{ role: 'user', parts: [{ text: prompt }] }],
-                systemInstruction: { role: 'system', parts: [{ text: 'You are an expert at creating concise, relevant titles for conversations.' }] }
+                // The new API just needs the raw history, not a pre-built prompt
+                history: conversationHistory
             })
         });
 
-        if (!response.ok) return;
+        if (!response.ok) {
+            console.error("Failed to rename chat.");
+            return;
+        }
 
         const result = await response.json();
-        if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
-            const newTitle = result.candidates[0].content.parts[0].text;
-            chatObject.title = newTitle.trim().replace(/"/g, '');
+        
+        // Look for the simple 'title' property in the response
+        if (result.title) {
+            chatObject.title = result.title; // Use the title from the response
             saveAllChats();
             renderChatHistoryList();
         }
