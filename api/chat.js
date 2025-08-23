@@ -73,10 +73,11 @@ export default async function handler(req, res) {
     let searchResultsContext = '';
     if (requiresWebSearch) {
         try {
-            // Construct the full URL for the web-search API
-            const vercelUrl = process.env.VERCEL_URL || 'localhost:3000';
-            const protocol = vercelUrl.startsWith('localhost') ? 'http' : 'https';
-            const searchApiUrl = `${protocol}://${vercelUrl}/api/web-search`;
+            // --- MODIFICATION START ---
+            const host = req.headers['x-forwarded-host'] || req.headers['host'];
+            const protocol = req.headers['x-forwarded-proto'] || 'http';
+            const searchApiUrl = `${protocol}://${host}/api/web-search`;
+            // --- MODIFICATION END ---
 
             const searchResponse = await fetch(searchApiUrl, {
                 method: 'POST',
