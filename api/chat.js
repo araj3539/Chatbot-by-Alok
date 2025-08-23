@@ -100,7 +100,7 @@ export default async function handler(req, res) {
         const newPrompt =
             `You are a helpful AI assistant. Your task is to synthesize a single, concise, and accurate answer to the user's question using the provided web search snippets as your primary source of information. ` +
             `Do not mention that you are using snippets or search results. Just provide the answer directly and confidently as if you already knew it. ` +
-            `If the information in the snippets is contradictory or insufficient to answer the question accurately, state that you couldn't find a definitive answer from the available information.\n\n` +
+            // `If the information in the snippets is contradictory or insufficient to answer the question accurately, state that you couldn't find a definitive answer from the available information.\n\n` +
             `[Web Search Snippets]:\n${searchResultsContext}\n\n` +
             `[User's Original Question]:\n${userQuery}\n\n` +
             `[Final Answer]:`;
