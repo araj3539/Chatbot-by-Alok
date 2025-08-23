@@ -37,8 +37,8 @@ export default async function handler(req, res) {
             text: `You are an intelligent routing agent. Your task is to analyze the user's query and decide which tool is appropriate to answer it.
 You must respond in a valid JSON format with a single key "tool_to_use".
 The possible values for "tool_to_use" are:
-1. "date_time_query": If the user is asking for the current date, day, or time.
-2. "web_search": If the query requires real-time, up-to-date information from the internet (e.g., current events, recent data, specific people, news).
+1. "date_time_query": If the user is asking for the current date, day, or time for any timezone.
+2. "web_search": If the query requires up-to-date information from the internet and queries that requires data due to knowledge cutoff (e.g., current events, recent data, specific people, news).
 3. "general_conversation": For all other queries, including general knowledge, concepts, history, or creative tasks.
 
 Examples:
@@ -58,7 +58,7 @@ Respond ONLY with the JSON object.`
         };
         const routerResponse = await callGemini(routerPayload, geminiApiKey);
         const routerResultText = routerResponse.candidates[0]?.content?.parts[0]?.text.trim();
-        
+
         // Clean and parse the JSON response from the model
         const jsonResponse = JSON.parse(routerResultText.replace(/```json|```/g, ''));
         selectedTool = jsonResponse.tool_to_use;
@@ -74,23 +74,61 @@ Respond ONLY with the JSON object.`
     try {
         switch (selectedTool) {
             case 'date_time_query':
+                // Step A: Extract Timezone
+                const timezoneExtractionSystemInstruction = {
+                    role: "system",
+                    parts: [{
+                        text: `You are a timezone extractor. Based on the user's query, identify the IANA timezone. If no location is specified, default to "Asia/Kolkata". Respond in a valid JSON format with a single key "timezone".
+Examples:
+- User: "what time is it now?" -> {"timezone": "Asia/Kolkata"}
+- User: "what time is it in london" -> {"timezone": "Europe/London"}
+Respond ONLY with the JSON object.`
+                    }]
+                };
+                const timezonePayload = {
+                    contents: [{ role: 'user', parts: [{ text: userQuery }] }],
+                    system_instruction: timezoneExtractionSystemInstruction,
+                };
+                const timezoneResponse = await callGemini(timezonePayload, geminiApiKey);
+                const timezoneResultText = timezoneResponse.candidates[0]?.content?.parts[0]?.text.trim();
+                const timezoneJsonResponse = JSON.parse(timezoneResultText.replace(/```json|```/g, ''));
+                const timezone = timezoneJsonResponse.timezone;
+
+                // Step B: Get current time string for that timezone
                 const now = new Date();
-                const options = { timeZone: 'Asia/Kolkata', hour12: true };
-                let responseText = '';
-                if (userQuery.toLowerCase().includes('time')) {
-                    options.hour = '2-digit';
-                    options.minute = '2-digit';
-                    responseText = `The current time is ${now.toLocaleTimeString('en-US', options)}.`;
-                } else {
-                    options.weekday = 'long';
-                    options.year = 'numeric';
-                    options.month = 'long';
-                    options.day = 'numeric';
-                    responseText = `Today is ${now.toLocaleDateString('en-US', options)}.`;
-                }
+                const options = {
+                    timeZone: timezone,
+                    hour12: true,
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                };
+                const currentTimeString = now.toLocaleString('en-US', options);
+                console.debug(currentTimeString);
+
+                // Step C: Use AI to generate a natural language response
+                const textGenSystemInstruction = {
+                    role: "system",
+                    parts: [{
+                        text: `You are a (date and time) assistant. Based on the current date and time provided in the prompt, answer the user's question in a natural way. Use date and time provided as it is don't manipulate data. Calculated time is already in their local time zone.`
+                    }]
+                };
+                const newPromptForTextGen = `The current date and time is: ${currentTimeString}. The user's original question was: "${userQuery}". Generate a response based on this information.`;
+                const textGenPayload = {
+                    contents: [{ role: 'user', parts: [{ text: newPromptForTextGen }] }],
+                    system_instruction: textGenSystemInstruction
+                };
+                const textGenResponse = await callGemini(textGenPayload, geminiApiKey);
+                const responseText = textGenResponse.candidates[0]?.content?.parts[0]?.text.trim();
+
+                // Step D: Return the generated response
                 return res.status(200).json({ candidates: [{ content: { parts: [{ text: responseText }] } }] });
 
             case 'web_search':
+                console.debug('web search called');
                 let searchResultsContext = '';
                 const host = req.headers['x-forwarded-host'] || req.headers['host'];
                 const protocol = req.headers['x-forwarded-proto'] || 'http';
@@ -106,7 +144,7 @@ Respond ONLY with the JSON object.`
                     const searchData = await searchResponse.json();
                     searchResultsContext = searchData.context;
                 }
-                
+
                 // Now, synthesize the final answer using the search context
                 const newPrompt =
                     `You are a helpful AI assistant. Synthesize a single, concise, and accurate answer to the user's question using the provided web search snippets as your primary source. Provide the answer directly as if you already knew it.\n\n` +
