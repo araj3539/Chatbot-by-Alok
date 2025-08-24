@@ -128,7 +128,6 @@ Respond ONLY with the JSON object.`
                 return res.status(200).json({ candidates: [{ content: { parts: [{ text: responseText }] } }] });
 
             case 'web_search':
-                console.debug('web search called');
                 let searchResultsContext = '';
                 const host = req.headers['x-forwarded-host'] || req.headers['host'];
                 const protocol = req.headers['x-forwarded-proto'] || 'http';

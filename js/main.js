@@ -98,6 +98,17 @@ function appendMessage(message, sender) {
     }
     messageWrapper.appendChild(messageBubble);
     messageList.appendChild(messageWrapper);
+
+    // Render math expressions in the new message
+    renderMathInElement(messageBubble, {
+        delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "$", right: "$", display: false},
+            {left: "\\(", right: "\\)", display: false},
+            {left: "\\[", right: "\\]", display: true}
+        ]
+    });
+
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
