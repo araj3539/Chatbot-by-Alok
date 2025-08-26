@@ -46,19 +46,22 @@
         }
 
         .chat-bubble {
-            max-width: 95%;
             word-wrap: break-word;
         }
 
         .user-bubble {
             background-color: #3b82f6;
             color: white;
+            max-width: 95%;
         }
 
+        /* --- THIS IS THE FIX --- */
         .bot-bubble {
-            background-color: #4b5563;
+            /* background-color removed */
             color: #f3f4f6;
+            width: 100%; /* Allow bot content to take full width */
         }
+        /* --- End of Fix --- */
 
         .typing-indicator span {
             height: 8px;
@@ -109,6 +112,28 @@
             overflow-x: auto;
             word-wrap: normal;
         }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+
+        .bot-bubble table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .bot-bubble th,
+        .bot-bubble td {
+            border: 1px solid #6b7280;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        .bot-bubble th {
+            background-color: #374151;
+            font-weight: 600;
+        }
 
         .history-item .delete-btn {
             display: none;
@@ -122,17 +147,13 @@
 
 <body class="bg-gray-800 text-white">
 
-    <!-- Authentication Container -->
+    <!-- Authentication Container (No Changes) -->
     <div id="auth-container" class="flex items-center justify-center h-screen">
         <div class="w-full max-w-md p-8 space-y-6 bg-gray-900 rounded-lg shadow-lg">
-
-            <!-- Sign In View -->
             <div id="signin-view">
                 <h2 class="text-2xl font-bold text-center">Sign In</h2>
                 <p class="text-center text-gray-400">Welcome back to NamasteAI</p>
                 <div id="signin-message" class="text-center text-sm mt-2"></div>
-                
-                <!-- Step 1: Email/Password or Email Link -->
                 <div id="signin-step-1">
                     <div class="space-y-4 mt-4">
                         <div>
@@ -156,26 +177,19 @@
                             In with Email Link</button>
                     </div>
                 </div>
-
-                <!-- Step 2: Check Email Message -->
                 <div id="signin-step-2" class="hidden text-center mt-4">
                     <p class="text-green-400">A sign-in link has been sent to your email address.</p>
                     <p class="text-gray-400 text-sm mt-2">Please check your inbox and click the link to sign in.</p>
                 </div>
-
                 <p class="mt-6 text-center text-sm">
                     Don't have an account?
                     <a href="#" id="show-signup-view" class="font-medium text-blue-400 hover:underline">Sign Up</a>
                 </p>
             </div>
-
-            <!-- Sign Up View -->
             <div id="signup-view" class="hidden">
                 <h2 class="text-2xl font-bold text-center">Create Account</h2>
                 <p class="text-center text-gray-400">Get started with NamasteAI</p>
                 <div id="signup-message" class="text-center text-sm mt-2"></div>
-
-                <!-- Step 1: Email Input -->
                 <div id="signup-step-1" class="space-y-4 mt-4">
                     <div>
                         <input type="email" id="signup-email-input" placeholder="Email Address"
@@ -185,8 +199,6 @@
                         class="w-full py-2 font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700">Send
                         Verification Link</button>
                 </div>
-
-                <!-- Step 2: Password Creation -->
                 <div id="signup-step-2" class="hidden space-y-4 mt-4">
                      <p class="text-center text-green-400 text-sm">Email verified! Please create a password to complete your registration.</p>
                     <div>
@@ -201,14 +213,11 @@
                         class="w-full py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">Create
                         Account</button>
                 </div>
-
                 <p class="mt-6 text-center text-sm">
                     Already have an account?
                     <a href="#" id="show-signin-view" class="font-medium text-blue-400 hover:underline">Sign In</a>
                 </p>
             </div>
-            
-            <!-- Verification Success View -->
             <div id="verification-success-view" class="hidden text-center">
                 <h2 class="text-2xl font-bold text-green-400">Verification Successful!</h2>
                 <p class="text-gray-300 mt-4">You are now signed in on your other device.</p>

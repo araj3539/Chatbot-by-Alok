@@ -62,13 +62,17 @@ const logoutModal = document.getElementById('logout-modal');
 const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
 const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
 
+// --- THIS IS THE FIX: Updated System Instructions ---
 const systemInstruction = {
     role: "system",
-    parts: [{ text: `Your name is NamasteAI created by Alok Raj. You are an intelligent chatbot with reasoning capability.
+    parts: [{ text: `Your name is NamasteAI created by Alok Raj. You are an intelligent and helpful AI Tutor. Your goal is to provide clear, well-structured, and visually appealing explanations.
         Follow these formatting rules strictly in all your responses:
-    1.  **Code Blocks**: ALWAYS enclose code snippets in triple backticks. Specify the language for syntax highlighting. For example: \`\`\`javascript\nconsole.log("Hello");\n\`\`\`
-    2.  **Mathematical Notation**: ALWAYS use KaTeX for math. For inline formulas, use single dollar signs, like $E=mc^2$. For block-level formulas, use double dollar signs, like $$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$. IMPORTANT: Inside KaTeX blocks ($...$) you MUST escape all backslashes. For example, write '\\\\frac' instead of '\\frac', and '\\\\textbf' instead of '\\textbf'.
-    3.  **General Formatting**: Use Markdown for lists, bolding, italics, and other text formatting.` }]
+    1.  **Structure and Clarity**: Use headings (#, ##, ###), bold text, and italics to organize your answers. Use emojis where appropriate to make the content more engaging.
+    2.  **Code Blocks**: ALWAYS enclose code snippets in triple backticks. Specify the language for syntax highlighting. For example: \`\`\`javascript\nconsole.log("Hello");\n\`\`\`
+    3.  **Mathematical Notation**: ALWAYS use KaTeX for math. For inline formulas, use single dollar signs, like $E=mc^2$. For block-level formulas, use double dollar signs, like $$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$. IMPORTANT: Inside KaTeX blocks ($...$) you MUST escape all backslashes. For example, write '\\\\frac' instead of '\\frac', and '\\\\textbf' instead of '\\textbf'.
+    4.  **Intelligent Table Formatting**: When a response contains data that is clearly structured in rows and columns (like comparisons, chemical tests, properties, etc.), you MUST format it as a Markdown table to ensure it is readable and does not overlap.
+    5.  **Blockquotes**: Use blockquotes (>) to highlight important notes, tips, or quotes.
+    6.  **Lists**: Use numbered or bulleted lists for steps, items, or key points.` }]
 };
 
 // --- State Management ---
@@ -457,7 +461,6 @@ async function renameChatWithAI(chatId, chatHistory) {
     }
 }
 
-// --- THIS IS THE FIX ---
 async function handleSendMessage() {
     if (isGenerating || !currentUser) return;
     const userMessage = userInput.value.trim();
@@ -467,7 +470,7 @@ async function handleSendMessage() {
     const isNewChat = !currentChatId;
 
     currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-    renderChatMessages(); // Re-render with the user's message immediately
+    renderChatMessages(); 
     userInput.value = '';
     showTypingIndicator(true);
     sendBtn.classList.add('hidden');
@@ -499,8 +502,8 @@ async function handleSendMessage() {
         
         const botMessage = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, something went wrong.";
         currentChatHistory.push({ role: "model", parts: [{ text: botMessage }] });
-        showTypingIndicator(false); // Hide indicator before rendering bot message
-        renderChatMessages(); // Re-render with the bot's response
+        showTypingIndicator(false); 
+        renderChatMessages(); 
 
         const currentChatObject = allChats.find(c => c.id === currentChatId);
         if (currentChatObject && currentChatObject.title === "New Chat" && isSubstantialMessage(userMessage)) {
