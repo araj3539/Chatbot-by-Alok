@@ -129,7 +129,6 @@ const handleEmailLinkFlow = () => {
         }
 
         if (email) {
-            // This device's job is to complete the auth and notify the other device.
             fetch('/api/complete-auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -173,12 +172,11 @@ const handlePasswordlessSignIn = () => {
             signinStep1.classList.add('hidden');
             signinStep2.classList.remove('hidden');
 
-            // Listen for the verification from the other device
             const unsub = db.collection('authTokens').doc(authToken).onSnapshot(doc => {
                 if (doc.exists && doc.data().status === 'verified') {
-                    unsub(); // Stop listening
+                    unsub(); 
                     auth.signInWithCustomToken(doc.data().customToken).catch(handleAuthError);
-                    doc.ref.delete(); // Clean up the token
+                    doc.ref.delete(); 
                 }
             });
         })
@@ -266,15 +264,43 @@ const renderChatHistoryList = () => {
 };
 
 const renderChatMessages = () => {
-    messageList.innerHTML = '';
+    let messagesHTML = '';
     currentChatHistory.forEach(msg => {
         if (msg.role !== 'system') {
             const sender = msg.role === 'user' ? 'user' : 'bot';
-            const formattedMessage = sender === 'bot' ? marked.parse(msg.parts[0].text) : msg.parts[0].text;
-            appendMessage(formattedMessage, sender);
+            const textContent = msg.parts[0].text;
+            
+            const sanitizedText = textContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const messageContent = sender === 'bot' ? marked.parse(textContent) : sanitizedText;
+
+            const wrapperClass = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+            const bubbleClass = `chat-bubble p-4 rounded-2xl ${sender === 'user' ? 'user-bubble' : 'bot-bubble'} shadow-md`;
+
+            messagesHTML += `
+                <div class="${wrapperClass}">
+                    <div class="${bubbleClass}">
+                        ${messageContent}
+                    </div>
+                </div>
+            `;
         }
     });
+
+    messageList.innerHTML = messagesHTML;
+
+    renderMathInElement(messageList, {
+        delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false }
+        ]
+    });
+    messageList.querySelectorAll('pre code').forEach((el) => {
+        Prism.highlightElement(el);
+    });
+
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 };
+
 
 function appendMessage(message, sender) {
     const messageWrapper = document.createElement('div');
@@ -299,7 +325,6 @@ function appendMessage(message, sender) {
         });
     }
 
-    messageWrapper.appendChild(messageWrapper);
     messageList.appendChild(messageWrapper);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
@@ -432,6 +457,7 @@ async function renameChatWithAI(chatId, chatHistory) {
     }
 }
 
+// --- THIS IS THE FIX ---
 async function handleSendMessage() {
     if (isGenerating || !currentUser) return;
     const userMessage = userInput.value.trim();
@@ -439,8 +465,9 @@ async function handleSendMessage() {
 
     isGenerating = true;
     const isNewChat = !currentChatId;
-    appendMessage(userMessage, 'user');
+
     currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+    renderChatMessages(); // Re-render with the user's message immediately
     userInput.value = '';
     showTypingIndicator(true);
     sendBtn.classList.add('hidden');
@@ -471,8 +498,9 @@ async function handleSendMessage() {
         }
         
         const botMessage = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, something went wrong.";
-        appendMessage(marked.parse(botMessage), 'bot');
         currentChatHistory.push({ role: "model", parts: [{ text: botMessage }] });
+        showTypingIndicator(false); // Hide indicator before rendering bot message
+        renderChatMessages(); // Re-render with the bot's response
 
         const currentChatObject = allChats.find(c => c.id === currentChatId);
         if (currentChatObject && currentChatObject.title === "New Chat" && isSubstantialMessage(userMessage)) {
@@ -493,6 +521,7 @@ async function handleSendMessage() {
         isGenerating = false;
     }
 }
+
 
 function handleStopGeneration() {
     if (abortController) {
