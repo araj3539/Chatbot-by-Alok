@@ -129,7 +129,10 @@ export default async function handler(req, res) {
                     const searchData = await searchResponse.json();
                     searchResultsContext = searchData.context;
                 }
-                const finalPrompt = `Synthesize a concise answer to the user's question using the provided web search snippets.\n\n[Web Search Snippets]:\n${searchResultsContext}\n\n[User's Question]:\n${userQuery}\n\n[Final Answer]:`;
+                const finalPrompt = `You are a helpful AI assistant. Synthesize a single, concise, and accurate answer to the user's question using the provided web search snippets as your primary source. Provide the answer directly as if you already knew it.\n\n` +
+                    `[Web Search Snippets]:\n${searchResultsContext}\n\n` +
+                    `[User's Original Question]:\n${userQuery}\n\n` +
+                    `[Final Answer]:`;
                 const finalPayload = {
                     contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
                     system_instruction: systemInstruction
