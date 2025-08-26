@@ -18,6 +18,7 @@ const appContainer = document.getElementById('app-container');
 // Auth Views
 const signinView = document.getElementById('signin-view');
 const signupView = document.getElementById('signup-view');
+const verificationSuccessView = document.getElementById('verification-success-view');
 const showSignupViewLinks = document.querySelectorAll('#show-signup-view');
 const showSigninViewLinks = document.querySelectorAll('#show-signin-view');
 
@@ -81,11 +82,18 @@ let isGenerating = false;
 // --- Authentication UI Logic ---
 const switchToSignUpView = () => {
     signinView.classList.add('hidden');
+    verificationSuccessView.classList.add('hidden');
     signupView.classList.remove('hidden');
 };
 const switchToSigninView = () => {
     signupView.classList.add('hidden');
+    verificationSuccessView.classList.add('hidden');
     signinView.classList.remove('hidden');
+};
+const switchToVerificationSuccessView = () => {
+    signinView.classList.add('hidden');
+    signupView.classList.add('hidden');
+    verificationSuccessView.classList.remove('hidden');
 };
 
 showSignupViewLinks.forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); switchToSignUpView(); }));
@@ -110,32 +118,29 @@ auth.onAuthStateChanged(user => {
 });
 
 const handleEmailLinkFlow = () => {
-    if (auth.isSignInWithEmailLink(window.location.href)) {
-        let emailForSignIn = window.localStorage.getItem('emailForSignIn');
-        let emailForSignUp = window.localStorage.getItem('emailForSignUp');
+    const urlParams = new URLSearchParams(window.location.search);
+    const authToken = urlParams.get('authToken');
+    const isSignUp = urlParams.get('mode') === 'signup';
 
-        // This is the passwordless sign-in flow
-        if (emailForSignIn) {
-            auth.signInWithEmailLink(emailForSignIn, window.location.href)
-                .then(() => window.localStorage.removeItem('emailForSignIn'))
-                .catch(handleAuthError);
-            return;
+    if (auth.isSignInWithEmailLink(window.location.href) && authToken) {
+        let email = window.localStorage.getItem(isSignUp ? 'emailForSignUp' : 'emailForSignIn');
+        if (!email) {
+            email = window.prompt('Please provide your email for confirmation');
         }
 
-        // This is the sign-up flow.
-        if (!emailForSignUp) {
-            emailForSignUp = window.prompt('Please provide your email to continue signing up.');
-        }
-
-        if (emailForSignUp) {
-            window.localStorage.setItem('emailForSignUp', emailForSignUp);
-            switchToSignUpView();
-            signupStep1.classList.add('hidden');
-            signupStep2.classList.remove('hidden');
-            signupMessage.textContent = `Email ${emailForSignUp} verified. Please create your password.`;
-            signupMessage.classList.add('text-green-400');
-        } else {
-            handleAuthError({ message: "We couldn't verify your email without a confirmation. Please try signing up again." }, 'signup');
+        if (email) {
+            // This device's job is to complete the auth and notify the other device.
+            fetch('/api/complete-auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, token: authToken })
+            }).then(res => {
+                if (res.ok) {
+                    switchToVerificationSuccessView();
+                } else {
+                    alert('Verification failed. Please try again.');
+                }
+            });
         }
     }
 };
@@ -157,13 +162,25 @@ const handleSignIn = () => {
 const handlePasswordlessSignIn = () => {
     const email = signinEmailInput.value;
     if (!email) { alert("Please enter your email address."); return; }
-    const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
+
+    const authToken = `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const url = `${window.location.origin}${window.location.pathname}?authToken=${authToken}`;
+    const actionCodeSettings = { url: url, handleCodeInApp: true };
+
     auth.sendSignInLinkToEmail(email, actionCodeSettings)
         .then(() => {
             window.localStorage.setItem('emailForSignIn', email);
-            // Switch to the "check email" view
             signinStep1.classList.add('hidden');
             signinStep2.classList.remove('hidden');
+
+            // Listen for the verification from the other device
+            const unsub = db.collection('authTokens').doc(authToken).onSnapshot(doc => {
+                if (doc.exists && doc.data().status === 'verified') {
+                    unsub(); // Stop listening
+                    auth.signInWithCustomToken(doc.data().customToken).catch(handleAuthError);
+                    doc.ref.delete(); // Clean up the token
+                }
+            });
         })
         .catch(handleAuthError);
 };
@@ -172,7 +189,11 @@ const handlePasswordlessSignIn = () => {
 const handleSignUpSendLink = () => {
     const email = signupEmailInput.value;
     if (!email) { alert("Please enter your email address."); return; }
-    const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
+    
+    const authToken = `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const url = `${window.location.origin}${window.location.pathname}?authToken=${authToken}&mode=signup`;
+    const actionCodeSettings = { url: url, handleCodeInApp: true };
+
     auth.sendSignInLinkToEmail(email, actionCodeSettings)
         .then(() => {
             window.localStorage.setItem('emailForSignUp', email);
