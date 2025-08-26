@@ -1,4 +1,22 @@
-// DOM Element References
+// --- Firebase Initialization ---
+const firebaseConfig = {
+    apiKey: "AIzaSyAwOc3hEpqeaN5bkeN4eenckdbs-OxM84U",
+    authDomain: "namasteai-chatbot.firebaseapp.com",
+    projectId: "namasteai-chatbot",
+    storageBucket: "namasteai-chatbot.appspot.com",
+    messagingSenderId: "10477791349",
+    appId: "1:10477791349:web:71a99aa6fc239f7980b03c"
+};
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// --- DOM Element References ---
+const authContainer = document.getElementById('auth-container');
+const emailInput = document.getElementById('email-input');
+const passwordInput = document.getElementById('password-input');
+const signinBtn = document.getElementById('signin-btn');
+const signupBtn = document.getElementById('signup-btn');
 const appContainer = document.getElementById('app-container');
 const chatContainer = document.getElementById('chat-container');
 const messageList = document.getElementById('message-list');
@@ -11,45 +29,68 @@ const menuBtn = document.getElementById('menu-btn');
 const sidebar = document.getElementById('sidebar');
 const sidebarOverlay = document.getElementById('sidebar-overlay');
 const micBtn = document.getElementById('mic-btn');
+const userSettingsBtn = document.getElementById('user-settings-btn');
+const userEmailDisplay = document.getElementById('user-email-display');
+const userMenuDropdown = document.getElementById('user-menu-dropdown');
+const logoutMenuBtn = document.getElementById('logout-menu-btn');
+const logoutModal = document.getElementById('logout-modal');
+const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
+const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
 
 const systemInstruction = {
     role: "system",
-    parts: [{
-        text: "Your name is NamasteAI created by Alok Raj.You are an intelligent chat bot with reasoning capability."
-    }]
+    parts: [{ text: "Your name is NamasteAI created by Alok Raj. You are an intelligent chatbot with reasoning capability." }]
 };
 
 // --- State Management ---
+let currentUser = null;
 let currentChatHistory = [];
 let allChats = [];
 let currentChatId = null;
 let abortController;
-let isGenerating = false; // To prevent concurrent submissions
+let isGenerating = false;
 
-// --- Local Storage Functions ---
-const saveAllChats = () => {
-    if (allChats.length > 50) {
-        allChats = allChats.slice(allChats.length - 50);
+// --- Authentication ---
+auth.onAuthStateChanged(user => {
+    if (user) {
+        currentUser = user;
+        userEmailDisplay.textContent = user.email;
+        authContainer.style.display = 'none';
+        appContainer.classList.remove('hidden');
+        loadUserChats();
+    } else {
+        currentUser = null;
+        authContainer.style.display = 'flex';
+        appContainer.classList.add('hidden');
+        messageList.innerHTML = '';
+        chatHistoryList.innerHTML = '';
     }
-    localStorage.setItem('aiTutorAllChats', JSON.stringify(allChats));
+});
+
+const handleSignUp = () => {
+    auth.createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
+        .catch(error => alert("Error: " + error.message));
 };
 
-const loadAllChats = () => {
-    const savedChats = localStorage.getItem('aiTutorAllChats');
-    allChats = savedChats ? JSON.parse(savedChats) : [];
+const handleSignIn = () => {
+    auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value)
+        .catch(error => alert("Error: " + error.message));
 };
 
-// --- UI Rendering Functions ---
+const handleSignOut = () => {
+    auth.signOut().catch(error => console.error("Sign out error", error));
+};
+
+// --- UI Rendering ---
 const renderChatHistoryList = () => {
     chatHistoryList.innerHTML = '';
     allChats.forEach(chat => {
         const item = document.createElement('div');
         item.classList.add('history-item', 'relative');
-
         const link = document.createElement('a');
         link.href = '#';
         link.textContent = chat.title;
-        link.classList.add('block', 'p-3', 'rounded-lg', 'truncate', 'hover:bg-gray-700', 'transition-colors', 'duration-200', 'w-full');
+        link.classList.add('block', 'p-3', 'rounded-lg', 'truncate', 'hover:bg-gray-700');
         if (chat.id === currentChatId) {
             link.classList.add('bg-gray-700/50');
         }
@@ -58,7 +99,6 @@ const renderChatHistoryList = () => {
             loadChat(chat.id);
             closeSidebar();
         };
-
         const deleteBtn = document.createElement('button');
         deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
         deleteBtn.classList.add('delete-btn', 'absolute', 'right-2', 'top-1/2', '-translate-y-1/2', 'text-gray-400', 'hover:text-red-500', 'p-1');
@@ -66,10 +106,9 @@ const renderChatHistoryList = () => {
             e.stopPropagation();
             deleteChat(chat.id);
         };
-
         item.appendChild(link);
         item.appendChild(deleteBtn);
-        chatHistoryList.prepend(item);
+        chatHistoryList.append(item); // Use append to maintain correct order
     });
 };
 
@@ -78,12 +117,10 @@ const renderChatMessages = () => {
     currentChatHistory.forEach(msg => {
         if (msg.role !== 'system') {
             const sender = msg.role === 'user' ? 'user' : 'bot';
-            const messageText = msg.parts[0].text;
-            const formattedMessage = sender === 'bot' ? marked.parse(messageText) : messageText;
+            const formattedMessage = sender === 'bot' ? marked.parse(msg.parts[0].text) : msg.parts[0].text;
             appendMessage(formattedMessage, sender);
         }
     });
-    Prism.highlightAll();
 };
 
 function appendMessage(message, sender) {
@@ -98,22 +135,11 @@ function appendMessage(message, sender) {
     }
     messageWrapper.appendChild(messageBubble);
     messageList.appendChild(messageWrapper);
-
-    // Render math expressions in the new message
-    renderMathInElement(messageBubble, {
-        delimiters: [
-            {left: "$$", right: "$$", display: true},
-            {left: "$", right: "$", display: false},
-            {left: "\\(", right: "\\)", display: false},
-            {left: "\\[", right: "\\]", display: true}
-        ]
-    });
-
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 function showTypingIndicator(show) {
-    let indicator = messageList.querySelector('#typing-indicator');;
+    let indicator = messageList.querySelector('#typing-indicator');
     if (show) {
         if (!indicator) {
             indicator = document.createElement('div');
@@ -128,74 +154,110 @@ function showTypingIndicator(show) {
     }
 }
 
-// --- Chat Logic Functions ---
+// --- Chat Logic ---
 const startNewChat = () => {
     currentChatId = null;
-    const welcomeMessage = "Hello! ,How can I help you today?";
+    const welcomeMessage = "Hello! How can I help you today?";
     currentChatHistory = [
         systemInstruction,
         { role: "model", parts: [{ text: welcomeMessage }] }
     ];
     renderChatMessages();
-    renderChatHistoryList(); // Deselects any active chat
+    renderChatHistoryList();
     closeSidebar();
 };
 
-const loadChat = (chatId) => {
-    const chat = allChats.find(c => c.id === chatId);
-    if (chat) {
-        currentChatId = chat.id;
-        currentChatHistory = [...chat.history];
-        renderChatMessages();
+async function loadUserChats() {
+    if (!currentUser) return;
+    try {
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/get-chats', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Failed to load chats.');
+        const chats = await response.json();
+        allChats = chats;
         renderChatHistoryList();
-    }
-};
-
-const deleteChat = (chatId) => {
-    allChats = allChats.filter(c => c.id !== chatId);
-    saveAllChats();
-    if (currentChatId === chatId) {
         if (allChats.length > 0) {
-            loadChat(allChats[allChats.length - 1].id);
+            loadChat(allChats[0].id);
         } else {
             startNewChat();
         }
+    } catch (error) {
+        console.error('Error loading user chats:', error);
     }
+}
+
+const loadChat = async (chatId) => {
+    if (!currentUser) return;
+    currentChatId = chatId;
     renderChatHistoryList();
+    messageList.innerHTML = '';
+    showTypingIndicator(true);
+    try {
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/get-messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ chatId: chatId })
+        });
+        if (!response.ok) throw new Error('Failed to load messages.');
+        const messages = await response.json();
+        currentChatHistory = [systemInstruction];
+        messages.forEach(msg => {
+            currentChatHistory.push({ role: msg.role, parts: [{ text: msg.text }] });
+        });
+        renderChatMessages();
+    } catch (error) {
+        console.error('Error loading chat messages:', error);
+        appendMessage('<strong>Error:</strong> Could not load this conversation.', 'bot');
+    } finally {
+        showTypingIndicator(false);
+    }
+};
+
+const deleteChat = async (chatId) => {
+    if (!currentUser) return;
+    try {
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/delete-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ chatId: chatId })
+        });
+        if (!response.ok) throw new Error('Failed to delete chat.');
+        allChats = allChats.filter(c => c.id !== chatId);
+        if (currentChatId === chatId) {
+            if (allChats.length > 0) { loadChat(allChats[0].id); } else { startNewChat(); }
+        }
+        renderChatHistoryList();
+    } catch (error) {
+        console.error("Error deleting chat:", error);
+        alert("Could not delete the chat.");
+    }
 };
 
 function isSubstantialMessage(message) {
-    const genericGreetings = ['hi', 'hello', 'hey', 'yo', 'sup', 'what\'s up', 'good morning', 'good afternoon', 'good evening'];
+    const genericGreetings = ['hi', 'hello', 'hey', 'yo', 'sup'];
     const normalizedMessage = message.toLowerCase().trim().replace(/[.,!?;]/g, '');
     return !genericGreetings.includes(normalizedMessage) || message.split(' ').length > 3;
 }
 
-async function renameChatWithAI(chatObject) {
+async function renameChatWithAI(chatId, chatHistory) {
+    if (!currentUser) return;
     try {
-        // We only need to send the relevant part of the history for context
-        const conversationHistory = chatObject.history.slice(1, 5);
-
-        // Call the new, dedicated API endpoint
+        const token = await currentUser.getIdToken();
         const response = await fetch('/api/rename-chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                // The new API just needs the raw history, not a pre-built prompt
-                history: conversationHistory
-            })
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ history: chatHistory.slice(1, 5), chatId: chatId })
         });
-
-        if (!response.ok) {
-            console.error("Failed to rename chat.");
-            return;
-        }
-
+        if (!response.ok) return;
         const result = await response.json();
-        
-        // Look for the simple 'title' property in the response
         if (result.title) {
-            chatObject.title = result.title; // Use the title from the response
-            saveAllChats();
+            const chatInState = allChats.find(c => c.id === chatId);
+            if (chatInState) { chatInState.title = result.title; }
             renderChatHistoryList();
         }
     } catch (error) {
@@ -204,82 +266,50 @@ async function renameChatWithAI(chatObject) {
 }
 
 async function handleSendMessage() {
-    // **FIX**: Prevent sending if a message is already being generated
-    if (isGenerating) return;
-
+    if (isGenerating || !currentUser) return;
     const userMessage = userInput.value.trim();
     if (!userMessage) return;
 
-    // **FIX**: Set generating state to true
     isGenerating = true;
-
     const isNewChat = !currentChatId;
-    let currentChatObject;
-
-    if (isNewChat) {
-        currentChatId = Date.now().toString();
-        const newChat = {
-            id: currentChatId,
-            title: "New Chat",
-            history: [...currentChatHistory]
-        };
-        allChats.push(newChat);
-        currentChatObject = newChat;
-    } else {
-        currentChatObject = allChats.find(c => c.id === currentChatId);
-    }
-
     appendMessage(userMessage, 'user');
     currentChatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-    currentChatObject.history = currentChatHistory;
-
-    saveAllChats();
-    if (isNewChat) renderChatHistoryList();
-
     userInput.value = '';
     showTypingIndicator(true);
-
     sendBtn.classList.add('hidden');
     stopBtn.classList.remove('hidden');
     abortController = new AbortController();
 
     try {
+        const token = await currentUser.getIdToken();
         const response = await fetch('/api/chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({
-                history: currentChatHistory.slice(1).map(msg => ({
-                    role: msg.role === 'model' ? 'model' : 'user',
-                    parts: msg.parts
-                })),
-                systemInstruction: systemInstruction
+                history: currentChatHistory.slice(1),
+                systemInstruction: systemInstruction,
+                chatId: currentChatId
             }),
             signal: abortController.signal
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error((await response.json()).error || 'HTTP error!');
+        
         const result = await response.json();
-
-        let botMessage = "Sorry, I couldn't get a response. Please try again.";
-        if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
-            botMessage = result.candidates[0].content.parts[0].text;
+        
+        if (isNewChat && result.chatId) {
+            currentChatId = result.chatId;
+            const newChat = { id: result.chatId, title: "New Chat" };
+            allChats.unshift(newChat);
+            renderChatHistoryList();
         }
-
-        showTypingIndicator(false);
-        const formattedBotMessage = marked.parse(botMessage);
-        appendMessage(formattedBotMessage, 'bot');
-        Prism.highlightAll();
+        
+        const botMessage = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, something went wrong.";
+        appendMessage(marked.parse(botMessage), 'bot');
         currentChatHistory.push({ role: "model", parts: [{ text: botMessage }] });
-        currentChatObject.history = currentChatHistory;
-        saveAllChats();
 
-        const needsRenaming = currentChatObject.title === "New Chat";
-        if (needsRenaming && isSubstantialMessage(userMessage)) {
-            renameChatWithAI(currentChatObject);
+        const currentChatObject = allChats.find(c => c.id === currentChatId);
+        if (currentChatObject && currentChatObject.title === "New Chat" && isSubstantialMessage(userMessage)) {
+            renameChatWithAI(currentChatId, currentChatHistory);
         }
 
     } catch (error) {
@@ -293,7 +323,6 @@ async function handleSendMessage() {
         showTypingIndicator(false);
         sendBtn.classList.remove('hidden');
         stopBtn.classList.add('hidden');
-        // **FIX**: Reset generating state to false
         isGenerating = false;
     }
 }
@@ -304,42 +333,47 @@ function handleStopGeneration() {
     }
 }
 
-// --- Mobile Viewport & Sidebar Logic ---
-const setAppHeight = () => { appContainer.style.height = `${window.innerHeight}px`; };
-const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
-const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
+// --- UI Event Listeners ---
+if (signinBtn && signupBtn) {
+    signinBtn.addEventListener('click', handleSignIn);
+    signupBtn.addEventListener('click', handleSignUp);
+}
 
-// --- Event Listeners & Initialization ---
 sendBtn.addEventListener('click', handleSendMessage);
-stopBtn.addEventListener('click', handleStopGeneration);
+stopBtn.addEventListener('click', handleStopGeneration); // Fix: Added stop button listener
 userInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') handleSendMessage(); });
 newChatBtn.addEventListener('click', startNewChat);
+
+// User Menu Logic
+userSettingsBtn.addEventListener('click', () => userMenuDropdown.classList.toggle('hidden'));
+logoutMenuBtn.addEventListener('click', () => {
+    logoutModal.classList.remove('hidden');
+    userMenuDropdown.classList.add('hidden');
+});
+cancelLogoutBtn.addEventListener('click', () => logoutModal.classList.add('hidden'));
+confirmLogoutBtn.addEventListener('click', () => {
+    handleSignOut();
+    logoutModal.classList.add('hidden');
+});
+
+// Mobile Sidebar
+const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
+const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
 menuBtn.addEventListener('click', openSidebar);
 sidebarOverlay.addEventListener('click', closeSidebar);
-window.addEventListener('resize', setAppHeight);
 
-window.onload = () => {
-    setAppHeight();
-    loadAllChats();
-    if (allChats.length > 0) {
-        loadChat(allChats[allChats.length - 1].id);
-    } else {
-        startNewChat();
-    }
-};
 // --- Speech to Text (Voice Recognition) Logic ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 
 if (SpeechRecognition) {
     recognition = new SpeechRecognition();
-    recognition.continuous = false; // Process a single utterance
+    recognition.continuous = false;
     recognition.lang = 'en-US';
     recognition.interimResults = false;
-
     let isRecognizing = false;
 
-    micBtn.addEventListener('click', () => {
+    micBtn.addEventListener('click', () => { // Fix: Added mic button listener
         if (isRecognizing) {
             recognition.stop();
             return;
@@ -349,7 +383,7 @@ if (SpeechRecognition) {
 
     recognition.onstart = () => {
         isRecognizing = true;
-        micBtn.classList.add('text-red-500'); // Visual feedback: recording
+        micBtn.classList.add('text-red-500');
         micBtn.querySelector('i').classList.add('fa-beat');
         userInput.placeholder = "Listening...";
     };
@@ -362,16 +396,14 @@ if (SpeechRecognition) {
     };
 
     recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        userInput.value = transcript;
+        userInput.value = event.results[0][0].transcript;
     };
 
     recognition.onerror = (event) => {
         console.error("Speech recognition error:", event.error);
         userInput.placeholder = "Sorry, I couldn't hear that.";
     };
-
 } else {
     console.log("Speech recognition not supported in this browser.");
-    micBtn.style.display = 'none'; // Hide button if not supported
+    micBtn.style.display = 'none';
 }
