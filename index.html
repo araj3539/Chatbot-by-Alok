@@ -105,9 +105,9 @@
             padding: 1rem;
             border-radius: 0.5rem;
             margin: 1em 0;
-            white-space: pre; /* Change from pre-wrap */
-            overflow-x: auto; /* Add this for scrolling */
-            word-wrap: normal;  /* Change from break-word */
+            white-space: pre;
+            overflow-x: auto;
+            word-wrap: normal;
         }
 
         .history-item .delete-btn {
@@ -125,50 +125,97 @@
     <!-- Authentication Container -->
     <div id="auth-container" class="flex items-center justify-center h-screen">
         <div class="w-full max-w-md p-8 space-y-6 bg-gray-900 rounded-lg shadow-lg">
-            <h2 class="text-2xl font-bold text-center">Welcome to NamasteAI</h2>
-            <p class="text-center text-gray-400">Sign in or create an account</p>
-            <div>
-                <input type="email" id="email-input" placeholder="Email Address"
-                    class="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded-md">
+
+            <!-- Sign In View -->
+            <div id="signin-view">
+                <h2 class="text-2xl font-bold text-center">Sign In</h2>
+                <p class="text-center text-gray-400">Welcome back to NamasteAI</p>
+                <div id="signin-message" class="text-center text-sm mt-2"></div>
+                <div class="space-y-4 mt-4">
+                    <div>
+                        <input type="email" id="signin-email-input" placeholder="Email Address"
+                            class="w-full px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-md">
+                    </div>
+                    <div>
+                        <input type="password" id="signin-password-input" placeholder="Password"
+                            class="w-full px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-md">
+                    </div>
+                    <button id="signin-btn"
+                        class="w-full py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">Sign
+                        In</button>
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-gray-600"></div>
+                        <span class="flex-shrink mx-4 text-gray-400 text-sm">or</span>
+                        <div class="flex-grow border-t border-gray-600"></div>
+                    </div>
+                    <button id="signin-email-link-btn"
+                        class="w-full py-2 font-semibold text-white bg-gray-600 rounded-md hover:bg-gray-700">Sign
+                        In with Email Link</button>
+                </div>
+                <p class="mt-6 text-center text-sm">
+                    Don't have an account?
+                    <a href="#" id="show-signup-view" class="font-medium text-blue-400 hover:underline">Sign Up</a>
+                </p>
             </div>
-            <div>
-                <input type="password" id="password-input" placeholder="Password"
-                    class="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded-md">
-            </div>
-            <div class="flex space-x-4">
-                <button id="signin-btn"
-                    class="w-full py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">Sign
-                    In</button>
-                <button id="signup-btn"
-                    class="w-full py-2 font-semibold text-white bg-gray-600 rounded-md hover:bg-gray-700">Sign
-                    Up</button>
+
+            <!-- Sign Up View -->
+            <div id="signup-view" class="hidden">
+                <h2 class="text-2xl font-bold text-center">Create Account</h2>
+                <p class="text-center text-gray-400">Get started with NamasteAI</p>
+                <div id="signup-message" class="text-center text-sm mt-2"></div>
+
+                <!-- Step 1: Email Input -->
+                <div id="signup-step-1" class="space-y-4 mt-4">
+                    <div>
+                        <input type="email" id="signup-email-input" placeholder="Email Address"
+                            class="w-full px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-md">
+                    </div>
+                    <button id="signup-send-link-btn"
+                        class="w-full py-2 font-semibold text-white bg-teal-600 rounded-md hover:bg-teal-700">Send
+                        Verification Link</button>
+                </div>
+
+                <!-- Step 2: Password Creation -->
+                <div id="signup-step-2" class="hidden space-y-4 mt-4">
+                     <p class="text-center text-green-400 text-sm">Email verified! Please create a password to complete your registration.</p>
+                    <div>
+                        <input type="password" id="signup-password-input" placeholder="Create a Password"
+                            class="w-full px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-md">
+                    </div>
+                     <div>
+                        <input type="password" id="signup-confirm-password-input" placeholder="Confirm Password"
+                            class="w-full px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-md">
+                    </div>
+                    <button id="signup-create-account-btn"
+                        class="w-full py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">Create
+                        Account</button>
+                </div>
+
+                <p class="mt-6 text-center text-sm">
+                    Already have an account?
+                    <a href="#" id="show-signin-view" class="font-medium text-blue-400 hover:underline">Sign In</a>
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- Main Application Container -->
+    <!-- Main Application Container (No Changes) -->
     <div id="app-container" class="relative flex h-screen hidden">
         <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden"></div>
-
-        <!-- Sidebar -->
         <aside id="sidebar"
             class="w-64 bg-gray-900 p-4 flex flex-col flex-shrink-0 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 z-30"
             style="padding-left: 10px; padding-top: 10px; padding-right: 10px;">
-            
             <button id="new-chat-btn" class="flex items-center p-3 rounded-lg text-left w-full hover:bg-gray-700 mb-4">
                 <i class="fas fa-plus mr-3"></i><span>New Chat</span>
             </button>
             <h2 class="mt-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Chat History</h2>
             <div id="chat-history-list" class="flex-1 overflow-y-auto space-y-2"></div>
-
-            <!-- User Profile Menu -->
             <div class="relative border-t border-gray-700 pt-2">
                 <button id="user-settings-btn" class="flex items-center w-full p-3 rounded-lg hover:bg-gray-700">
                     <i class="fas fa-user-circle text-xl mr-3"></i>
                     <span id="user-email-display" class="truncate text-sm">user@example.com</span>
                     <i class="fas fa-ellipsis-v ml-auto"></i>
                 </button>
-                <!-- Dropdown Menu -->
                 <div id="user-menu-dropdown"
                     class="absolute bottom-full left-0 mb-2 w-full bg-gray-800 rounded-lg shadow-lg p-2 hidden">
                     <button class="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 rounded">User
@@ -178,8 +225,6 @@
                 </div>
             </div>
         </aside>
-
-        <!-- Main Content Area -->
         <div class="flex-1 flex flex-col min-w-0">
             <header class="bg-gray-800 p-4 flex items-center justify-center border-b border-gray-700 flex-shrink-0">
                 <div class="w-full max-w-4xl flex items-center">
@@ -195,11 +240,9 @@
                     </div>
                 </div>
             </header>
-
             <main id="chat-container" class="flex-1 overflow-y-auto px-2 sm:px-6">
                 <div id="message-list" class="w-full max-w-4xl mx-auto py-6 space-y-4"></div>
             </main>
-
             <footer class="px-2 sm:p-4 py-4 bg-gray-800/80 backdrop-blur-sm border-t border-gray-700 flex-shrink-0">
                 <div class="w-full max-w-4xl mx-auto">
                     <div class="flex items-center bg-gray-700 rounded-full pl-4 pr-2 py-1">
@@ -220,7 +263,7 @@
         </div>
     </div>
 
-    <!-- Logout Confirmation Modal -->
+    <!-- Logout Confirmation Modal (No Changes) -->
     <div id="logout-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm">
             <h3 class="text-lg font-bold mb-4">Confirm Logout</h3>
@@ -236,12 +279,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
-
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
     <script src="js/main.js"></script>
 
 </body>

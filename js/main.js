@@ -13,11 +13,33 @@ const db = firebase.firestore();
 
 // --- DOM Element References ---
 const authContainer = document.getElementById('auth-container');
-const emailInput = document.getElementById('email-input');
-const passwordInput = document.getElementById('password-input');
-const signinBtn = document.getElementById('signin-btn');
-const signupBtn = document.getElementById('signup-btn');
 const appContainer = document.getElementById('app-container');
+
+// Auth Views
+const signinView = document.getElementById('signin-view');
+const signupView = document.getElementById('signup-view');
+const showSignupViewLinks = document.querySelectorAll('#show-signup-view');
+const showSigninViewLinks = document.querySelectorAll('#show-signin-view');
+
+// Sign In Elements
+const signinEmailInput = document.getElementById('signin-email-input');
+const signinPasswordInput = document.getElementById('signin-password-input');
+const signinBtn = document.getElementById('signin-btn');
+const signinEmailLinkBtn = document.getElementById('signin-email-link-btn');
+const signinMessage = document.getElementById('signin-message');
+
+// Sign Up Elements
+const signupStep1 = document.getElementById('signup-step-1');
+const signupStep2 = document.getElementById('signup-step-2');
+const signupEmailInput = document.getElementById('signup-email-input');
+const signupPasswordInput = document.getElementById('signup-password-input');
+const signupConfirmPasswordInput = document.getElementById('signup-confirm-password-input');
+const signupSendLinkBtn = document.getElementById('signup-send-link-btn');
+const signupCreateAccountBtn = document.getElementById('signup-create-account-btn');
+const signupMessage = document.getElementById('signup-message');
+
+
+// Main App Elements
 const chatContainer = document.getElementById('chat-container');
 const messageList = document.getElementById('message-list');
 const userInput = document.getElementById('user-input');
@@ -39,8 +61,7 @@ const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
 
 const systemInstruction = {
     role: "system",
-    parts: [{
-        text: `Your name is NamasteAI created by Alok Raj. You are an intelligent chatbot with reasoning capability.
+    parts: [{ text: `Your name is NamasteAI created by Alok Raj. You are an intelligent chatbot with reasoning capability.
         Follow these formatting rules strictly in all your responses:
     1.  **Code Blocks**: ALWAYS enclose code snippets in triple backticks. Specify the language for syntax highlighting. For example: \`\`\`javascript\nconsole.log("Hello");\n\`\`\`
     2.  **Mathematical Notation**: ALWAYS use KaTeX for math. For inline formulas, use single dollar signs, like $E=mc^2$. For block-level formulas, use double dollar signs, like $$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$. IMPORTANT: Inside KaTeX blocks ($...$) you MUST escape all backslashes. For example, write '\\\\frac' instead of '\\frac', and '\\\\textbf' instead of '\\textbf'.
@@ -55,7 +76,21 @@ let currentChatId = null;
 let abortController;
 let isGenerating = false;
 
-// --- Authentication ---
+// --- Authentication UI Logic ---
+const switchToSignUpView = () => {
+    signinView.classList.add('hidden');
+    signupView.classList.remove('hidden');
+};
+const switchToSigninView = () => {
+    signupView.classList.add('hidden');
+    signinView.classList.remove('hidden');
+};
+
+showSignupViewLinks.forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); switchToSignUpView(); }));
+showSigninViewLinks.forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); switchToSigninView(); }));
+
+
+// --- Authentication Core Logic ---
 auth.onAuthStateChanged(user => {
     if (user) {
         currentUser = user;
@@ -72,19 +107,105 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-const handleSignUp = () => {
-    auth.createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
-        .catch(error => alert("Error: " + error.message));
+const handleEmailLinkFlow = () => {
+    if (auth.isSignInWithEmailLink(window.location.href)) {
+        let emailForSignIn = window.localStorage.getItem('emailForSignIn');
+        let emailForSignUp = window.localStorage.getItem('emailForSignUp');
+
+        if (emailForSignUp) {
+            // This is a sign-up completion flow
+            switchToSignUpView();
+            signupStep1.classList.add('hidden');
+            signupStep2.classList.remove('hidden');
+            signupMessage.textContent = `Email ${emailForSignUp} verified. Please create your password.`;
+            signupMessage.classList.add('text-green-400');
+        } else if (emailForSignIn) {
+            // This is a passwordless sign-in flow
+            auth.signInWithEmailLink(emailForSignIn, window.location.href)
+                .then(() => window.localStorage.removeItem('emailForSignIn'))
+                .catch(handleAuthError);
+        } else {
+            // User opened link on a different device
+            const email = window.prompt('Please provide your email for confirmation');
+            if (email) {
+                 auth.signInWithEmailLink(email, window.location.href)
+                    .catch(handleAuthError);
+            }
+        }
+    }
 };
 
-const handleSignIn = () => {
-    auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value)
-        .catch(error => alert("Error: " + error.message));
+const handleAuthError = (error, type = 'signin') => {
+    const messageElement = type === 'signin' ? signinMessage : signupMessage;
+    messageElement.textContent = `Error: ${error.message}`;
+    messageElement.classList.remove('text-green-400');
+    messageElement.classList.add('text-red-400');
 };
+
+// Sign In Handlers
+const handleSignIn = () => {
+    auth.signInWithEmailAndPassword(signinEmailInput.value, signinPasswordInput.value)
+        .catch(handleAuthError);
+};
+
+const handlePasswordlessSignIn = () => {
+    const email = signinEmailInput.value;
+    if (!email) { alert("Please enter your email address."); return; }
+    const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
+    auth.sendSignInLinkToEmail(email, actionCodeSettings)
+        .then(() => {
+            window.localStorage.setItem('emailForSignIn', email);
+            signinMessage.textContent = `A sign-in link has been sent to ${email}.`;
+            signinMessage.classList.add('text-green-400');
+        })
+        .catch(handleAuthError);
+};
+
+// Sign Up Handlers
+const handleSignUpSendLink = () => {
+    const email = signupEmailInput.value;
+    if (!email) { alert("Please enter your email address."); return; }
+    const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
+    auth.sendSignInLinkToEmail(email, actionCodeSettings)
+        .then(() => {
+            window.localStorage.setItem('emailForSignUp', email);
+            signupMessage.textContent = `A verification link has been sent to ${email}. Please check your inbox to continue.`;
+            signupMessage.classList.add('text-green-400');
+        })
+        .catch((error) => handleAuthError(error, 'signup'));
+};
+
+const handleCreateAccount = () => {
+    const password = signupPasswordInput.value;
+    const confirmPassword = signupConfirmPasswordInput.value;
+    const email = window.localStorage.getItem('emailForSignUp');
+
+    if (!email) {
+        handleAuthError({ message: "Could not find your verified email. Please start the sign-up process again." }, 'signup');
+        return;
+    }
+    if (password !== confirmPassword) {
+        handleAuthError({ message: "Passwords do not match." }, 'signup');
+        return;
+    }
+    if (password.length < 6) {
+        handleAuthError({ message: "Password should be at least 6 characters." }, 'signup');
+        return;
+    }
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(() => {
+            window.localStorage.removeItem('emailForSignUp');
+            // User is automatically signed in by onAuthStateChanged
+        })
+        .catch((error) => handleAuthError(error, 'signup'));
+};
+
 
 const handleSignOut = () => {
     auth.signOut().catch(error => console.error("Sign out error", error));
 };
+
 
 // --- UI Rendering ---
 const renderChatHistoryList = () => {
@@ -133,17 +254,16 @@ function appendMessage(message, sender) {
     messageWrapper.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start');
     const messageBubble = document.createElement('div');
     messageBubble.classList.add('chat-bubble', 'p-4', 'rounded-2xl', sender === 'user' ? 'user-bubble' : 'bot-bubble', 'shadow-md');
+    
     if (sender === 'user') {
         messageBubble.textContent = message;
     } else {
         messageBubble.innerHTML = message;
-        // This is the fix: render KaTeX math in the new message
+        
         renderMathInElement(messageBubble, {
             delimiters: [
                 { left: "$$", right: "$$", display: true },
-                { left: "$", right: "$", display: false },
-                { left: "\\(", right: "\\)", display: false },
-                { left: "\\[", right: "\\]", display: true }
+                { left: "$", right: "$", display: false }
             ]
         });
 
@@ -151,10 +271,12 @@ function appendMessage(message, sender) {
             Prism.highlightElement(el);
         });
     }
+
     messageWrapper.appendChild(messageBubble);
     messageList.appendChild(messageWrapper);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
+
 
 function showTypingIndicator(show) {
     let indicator = messageList.querySelector('#typing-indicator');
@@ -311,16 +433,16 @@ async function handleSendMessage() {
             signal: abortController.signal
         });
         if (!response.ok) throw new Error((await response.json()).error || 'HTTP error!');
-
+        
         const result = await response.json();
-
+        
         if (isNewChat && result.chatId) {
             currentChatId = result.chatId;
             const newChat = { id: result.chatId, title: "New Chat" };
             allChats.unshift(newChat);
             renderChatHistoryList();
         }
-
+        
         const botMessage = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, something went wrong.";
         appendMessage(marked.parse(botMessage), 'bot');
         currentChatHistory.push({ role: "model", parts: [{ text: botMessage }] });
@@ -351,16 +473,15 @@ function handleStopGeneration() {
     }
 }
 
-// --- THIS IS THE FIX: Mobile Viewport Height Logic ---
 const setAppHeight = () => {
     appContainer.style.height = `${window.innerHeight}px`;
 };
 
 // --- UI Event Listeners ---
-if (signinBtn && signupBtn) {
-    signinBtn.addEventListener('click', handleSignIn);
-    signupBtn.addEventListener('click', handleSignUp);
-}
+signinBtn.addEventListener('click', handleSignIn);
+signinEmailLinkBtn.addEventListener('click', handlePasswordlessSignIn);
+signupSendLinkBtn.addEventListener('click', handleSignUpSendLink);
+signupCreateAccountBtn.addEventListener('click', handleCreateAccount);
 
 sendBtn.addEventListener('click', handleSendMessage);
 stopBtn.addEventListener('click', handleStopGeneration);
@@ -432,5 +553,7 @@ if (SpeechRecognition) {
     micBtn.style.display = 'none';
 }
 
-// Initial setup call
+// --- Initial setup calls ---
 setAppHeight();
+handleEmailLinkFlow(); // Check for any kind of email link on page load
+
