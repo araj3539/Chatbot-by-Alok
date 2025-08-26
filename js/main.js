@@ -39,10 +39,11 @@ const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
 
 const systemInstruction = {
     role: "system",
-    parts: [{ text: `Your name is NamasteAI created by Alok Raj. You are an intelligent chatbot with reasoning capability.
+    parts: [{
+        text: `Your name is NamasteAI created by Alok Raj. You are an intelligent chatbot with reasoning capability.
         Follow these formatting rules strictly in all your responses:
     1.  **Code Blocks**: ALWAYS enclose code snippets in triple backticks. Specify the language for syntax highlighting. For example: \`\`\`javascript\nconsole.log("Hello");\n\`\`\`
-    2.  **Mathematical Notation**: ALWAYS use KaTeX for math. For inline formulas, use single dollar signs, like $E=mc^2$. For block-level formulas, use double dollar signs, like $$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$. Do not use plain text for exponents or formulas.
+    2.  **Mathematical Notation**: ALWAYS use KaTeX for math. For inline formulas, use single dollar signs, like $E=mc^2$. For block-level formulas, use double dollar signs, like $$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$. IMPORTANT: Inside KaTeX blocks ($...$) you MUST escape all backslashes. For example, write '\\\\frac' instead of '\\frac', and '\\\\textbf' instead of '\\textbf'.
     3.  **General Formatting**: Use Markdown for lists, bolding, italics, and other text formatting.` }]
 };
 
@@ -136,6 +137,19 @@ function appendMessage(message, sender) {
         messageBubble.textContent = message;
     } else {
         messageBubble.innerHTML = message;
+        // This is the fix: render KaTeX math in the new message
+        renderMathInElement(messageBubble, {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true }
+            ]
+        });
+
+        messageBubble.querySelectorAll('pre code').forEach((el) => {
+            Prism.highlightElement(el);
+        });
     }
     messageWrapper.appendChild(messageBubble);
     messageList.appendChild(messageWrapper);
@@ -297,16 +311,16 @@ async function handleSendMessage() {
             signal: abortController.signal
         });
         if (!response.ok) throw new Error((await response.json()).error || 'HTTP error!');
-        
+
         const result = await response.json();
-        
+
         if (isNewChat && result.chatId) {
             currentChatId = result.chatId;
             const newChat = { id: result.chatId, title: "New Chat" };
             allChats.unshift(newChat);
             renderChatHistoryList();
         }
-        
+
         const botMessage = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, something went wrong.";
         appendMessage(marked.parse(botMessage), 'bot');
         currentChatHistory.push({ role: "model", parts: [{ text: botMessage }] });
