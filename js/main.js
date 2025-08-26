@@ -22,6 +22,8 @@ const showSignupViewLinks = document.querySelectorAll('#show-signup-view');
 const showSigninViewLinks = document.querySelectorAll('#show-signin-view');
 
 // Sign In Elements
+const signinStep1 = document.getElementById('signin-step-1');
+const signinStep2 = document.getElementById('signin-step-2');
 const signinEmailInput = document.getElementById('signin-email-input');
 const signinPasswordInput = document.getElementById('signin-password-input');
 const signinBtn = document.getElementById('signin-btn');
@@ -117,28 +119,22 @@ const handleEmailLinkFlow = () => {
             auth.signInWithEmailLink(emailForSignIn, window.location.href)
                 .then(() => window.localStorage.removeItem('emailForSignIn'))
                 .catch(handleAuthError);
-            return; 
+            return;
         }
 
         // This is the sign-up flow.
-        // If email is not in storage (e.g., different device), prompt for it.
         if (!emailForSignUp) {
             emailForSignUp = window.prompt('Please provide your email to continue signing up.');
         }
 
         if (emailForSignUp) {
-            // Store the email (again) in case it came from the prompt.
-            // This ensures the create account step will work.
             window.localStorage.setItem('emailForSignUp', emailForSignUp);
-
-            // Now, show the password creation screen.
             switchToSignUpView();
             signupStep1.classList.add('hidden');
             signupStep2.classList.remove('hidden');
             signupMessage.textContent = `Email ${emailForSignUp} verified. Please create your password.`;
             signupMessage.classList.add('text-green-400');
         } else {
-            // This handles the case where the user cancels the prompt.
             handleAuthError({ message: "We couldn't verify your email without a confirmation. Please try signing up again." }, 'signup');
         }
     }
@@ -165,8 +161,9 @@ const handlePasswordlessSignIn = () => {
     auth.sendSignInLinkToEmail(email, actionCodeSettings)
         .then(() => {
             window.localStorage.setItem('emailForSignIn', email);
-            signinMessage.textContent = `A sign-in link has been sent to ${email}.`;
-            signinMessage.classList.add('text-green-400');
+            // Switch to the "check email" view
+            signinStep1.classList.add('hidden');
+            signinStep2.classList.remove('hidden');
         })
         .catch(handleAuthError);
 };
@@ -206,7 +203,6 @@ const handleCreateAccount = () => {
     auth.createUserWithEmailAndPassword(email, password)
         .then(() => {
             window.localStorage.removeItem('emailForSignUp');
-            // User is automatically signed in by onAuthStateChanged
         })
         .catch((error) => handleAuthError(error, 'signup'));
 };
@@ -282,7 +278,7 @@ function appendMessage(message, sender) {
         });
     }
 
-    messageWrapper.appendChild(messageBubble);
+    messageWrapper.appendChild(messageWrapper);
     messageList.appendChild(messageWrapper);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
