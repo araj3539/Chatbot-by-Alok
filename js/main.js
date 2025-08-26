@@ -112,28 +112,38 @@ const handleEmailLinkFlow = () => {
         let emailForSignIn = window.localStorage.getItem('emailForSignIn');
         let emailForSignUp = window.localStorage.getItem('emailForSignUp');
 
+        // This is the passwordless sign-in flow
+        if (emailForSignIn) {
+            auth.signInWithEmailLink(emailForSignIn, window.location.href)
+                .then(() => window.localStorage.removeItem('emailForSignIn'))
+                .catch(handleAuthError);
+            return; 
+        }
+
+        // This is the sign-up flow.
+        // If email is not in storage (e.g., different device), prompt for it.
+        if (!emailForSignUp) {
+            emailForSignUp = window.prompt('Please provide your email to continue signing up.');
+        }
+
         if (emailForSignUp) {
-            // This is a sign-up completion flow
+            // Store the email (again) in case it came from the prompt.
+            // This ensures the create account step will work.
+            window.localStorage.setItem('emailForSignUp', emailForSignUp);
+
+            // Now, show the password creation screen.
             switchToSignUpView();
             signupStep1.classList.add('hidden');
             signupStep2.classList.remove('hidden');
             signupMessage.textContent = `Email ${emailForSignUp} verified. Please create your password.`;
             signupMessage.classList.add('text-green-400');
-        } else if (emailForSignIn) {
-            // This is a passwordless sign-in flow
-            auth.signInWithEmailLink(emailForSignIn, window.location.href)
-                .then(() => window.localStorage.removeItem('emailForSignIn'))
-                .catch(handleAuthError);
         } else {
-            // User opened link on a different device
-            const email = window.prompt('Please provide your email for confirmation');
-            if (email) {
-                 auth.signInWithEmailLink(email, window.location.href)
-                    .catch(handleAuthError);
-            }
+            // This handles the case where the user cancels the prompt.
+            handleAuthError({ message: "We couldn't verify your email without a confirmation. Please try signing up again." }, 'signup');
         }
     }
 };
+
 
 const handleAuthError = (error, type = 'signin') => {
     const messageElement = type === 'signin' ? signinMessage : signupMessage;
@@ -556,4 +566,3 @@ if (SpeechRecognition) {
 // --- Initial setup calls ---
 setAppHeight();
 handleEmailLinkFlow(); // Check for any kind of email link on page load
-
