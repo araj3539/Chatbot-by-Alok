@@ -3,7 +3,6 @@
 
 <head>
     <meta charset="UTF-8">
-    <!-- THIS IS THE FIX: Updated viewport to prevent zooming and ensure proper scaling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Chatbot by Alok</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,7 +19,6 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
 
     <style>
-        /* --- THIS IS THE FIX: New robust layout styles --- */
         html, body {
             height: 100%;
             overflow: hidden;
@@ -42,7 +40,6 @@
             overflow-y: auto;
             overflow-x: hidden;
         }
-        /* --- End of Fix --- */
 
         #chat-history-list::-webkit-scrollbar {
             width: 6px;
@@ -267,7 +264,6 @@
             </div>
         </aside>
         
-        <!-- THIS IS THE FIX: New `content-wrapper` structure -->
         <div class="content-wrapper flex-1 min-w-0">
             <header class="bg-gray-800 p-4 flex items-center justify-center border-b border-gray-700 flex-shrink-0">
                 <div class="w-full max-w-4xl flex items-center">
@@ -284,6 +280,17 @@
                 </div>
             </header>
             <main id="chat-container" class="px-2 sm:px-6">
+                <!-- THIS IS THE FIX: New placeholder for the welcome screen -->
+                <div id="new-chat-placeholder" class="h-full flex-col justify-center items-center text-center hidden">
+                    <h2 class="text-3xl font-bold mb-8">What can I help with?</h2>
+                    <!-- Suggestion chips for mobile only -->
+                    <div class="grid grid-cols-2 gap-4 md:hidden">
+                        <button class="suggestion-chip bg-gray-700 p-4 rounded-lg">Explain a concept</button>
+                        <button class="suggestion-chip bg-gray-700 p-4 rounded-lg">Summarize text</button>
+                        <button class="suggestion-chip bg-gray-700 p-4 rounded-lg">Brainstorm ideas</button>
+                        <button class="suggestion-chip bg-gray-700 p-4 rounded-lg">Write code</button>
+                    </div>
+                </div>
                 <div id="message-list" class="w-full max-w-4xl mx-auto py-6 space-y-4"></div>
             </main>
             <footer class="px-2 sm:p-4 py-4 bg-gray-800/80 backdrop-blur-sm border-t border-gray-700 flex-shrink-0">

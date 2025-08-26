@@ -45,6 +45,8 @@ const signupMessage = document.getElementById('signup-message');
 // Main App Elements
 const chatContainer = document.getElementById('chat-container');
 const messageList = document.getElementById('message-list');
+const newChatPlaceholder = document.getElementById('new-chat-placeholder');
+const suggestionChips = document.querySelectorAll('.suggestion-chip');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
 const stopBtn = document.getElementById('stop-btn');
@@ -267,6 +269,17 @@ const renderChatHistoryList = () => {
 };
 
 const renderChatMessages = () => {
+    if (currentChatHistory.length <= 1) {
+        messageList.classList.add('hidden');
+        newChatPlaceholder.classList.remove('hidden');
+        newChatPlaceholder.classList.add('flex');
+        return;
+    }
+    
+    messageList.classList.remove('hidden');
+    newChatPlaceholder.classList.add('hidden');
+    newChatPlaceholder.classList.remove('flex');
+
     let messagesHTML = '';
     currentChatHistory.forEach(msg => {
         if (msg.role !== 'system') {
@@ -359,10 +372,8 @@ function showTypingIndicator(show) {
 // --- Chat Logic ---
 const startNewChat = () => {
     currentChatId = null;
-    const welcomeMessage = "Hello! How can I help you today?";
     currentChatHistory = [
-        systemInstruction,
-        { role: "model", parts: [{ text: welcomeMessage }] }
+        systemInstruction
     ];
     renderChatMessages();
     renderChatHistoryList();
@@ -538,6 +549,12 @@ function handleStopGeneration() {
     }
 }
 
+const handleSuggestionClick = (event) => {
+    const text = event.target.textContent;
+    userInput.value = text;
+    handleSendMessage();
+};
+
 // --- UI Event Listeners ---
 signinBtn.addEventListener('click', handleSignIn);
 signinEmailLinkBtn.addEventListener('click', handlePasswordlessSignIn);
@@ -548,6 +565,7 @@ sendBtn.addEventListener('click', handleSendMessage);
 stopBtn.addEventListener('click', handleStopGeneration);
 userInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') handleSendMessage(); });
 newChatBtn.addEventListener('click', startNewChat);
+suggestionChips.forEach(chip => chip.addEventListener('click', handleSuggestionClick));
 
 // User Menu Logic
 userSettingsBtn.addEventListener('click', () => userMenuDropdown.classList.toggle('hidden'));
