@@ -39,7 +39,11 @@ const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
 
 const systemInstruction = {
     role: "system",
-    parts: [{ text: "Your name is NamasteAI created by Alok Raj. You are an intelligent chatbot with reasoning capability." }]
+    parts: [{ text: `Your name is NamasteAI created by Alok Raj. You are an intelligent chatbot with reasoning capability.
+        Follow these formatting rules strictly in all your responses:
+    1.  **Code Blocks**: ALWAYS enclose code snippets in triple backticks. Specify the language for syntax highlighting. For example: \`\`\`javascript\nconsole.log("Hello");\n\`\`\`
+    2.  **Mathematical Notation**: ALWAYS use KaTeX for math. For inline formulas, use single dollar signs, like $E=mc^2$. For block-level formulas, use double dollar signs, like $$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$. Do not use plain text for exponents or formulas.
+    3.  **General Formatting**: Use Markdown for lists, bolding, italics, and other text formatting.` }]
 };
 
 // --- State Management ---
@@ -333,6 +337,11 @@ function handleStopGeneration() {
     }
 }
 
+// --- THIS IS THE FIX: Mobile Viewport Height Logic ---
+const setAppHeight = () => {
+    appContainer.style.height = `${window.innerHeight}px`;
+};
+
 // --- UI Event Listeners ---
 if (signinBtn && signupBtn) {
     signinBtn.addEventListener('click', handleSignIn);
@@ -356,11 +365,12 @@ confirmLogoutBtn.addEventListener('click', () => {
     logoutModal.classList.add('hidden');
 });
 
-// Mobile Sidebar
+// Mobile Sidebar & Height
 const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); };
 const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
 menuBtn.addEventListener('click', openSidebar);
 sidebarOverlay.addEventListener('click', closeSidebar);
+window.addEventListener('resize', setAppHeight);
 
 // --- Speech to Text (Voice Recognition) Logic ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -407,3 +417,6 @@ if (SpeechRecognition) {
     console.log("Speech recognition not supported in this browser.");
     micBtn.style.display = 'none';
 }
+
+// Initial setup call
+setAppHeight();
