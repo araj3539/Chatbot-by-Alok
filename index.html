@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- THIS IS THE FIX: Updated viewport to prevent zooming and ensure proper scaling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Chatbot by Alok</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet"
@@ -19,28 +20,43 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
 
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        /* --- THIS IS THE FIX: New robust layout styles --- */
+        html, body {
+            height: 100%;
             overflow: hidden;
         }
 
-        #chat-container::-webkit-scrollbar,
+        #app-container {
+            height: 100%;
+        }
+
+        .content-wrapper {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        main#chat-container {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        /* --- End of Fix --- */
+
         #chat-history-list::-webkit-scrollbar {
             width: 6px;
         }
 
-        #chat-container::-webkit-scrollbar-track,
         #chat-history-list::-webkit-scrollbar-track {
             background: #1f2937;
         }
 
-        #chat-container::-webkit-scrollbar-thumb,
         #chat-history-list::-webkit-scrollbar-thumb {
             background: #4b5563;
             border-radius: 3px;
         }
 
-        #chat-container::-webkit-scrollbar-thumb:hover,
         #chat-history-list::-webkit-scrollbar-thumb:hover {
             background: #6b7280;
         }
@@ -53,15 +69,14 @@
             background-color: #3b82f6;
             color: white;
             max-width: 95%;
+            padding: 0.75rem 1rem;
+            border-radius: 1.25rem;
         }
 
-        /* --- THIS IS THE FIX --- */
         .bot-bubble {
-            /* background-color removed */
             color: #f3f4f6;
-            width: 100%; /* Allow bot content to take full width */
+            max-width: 100%;
         }
-        /* --- End of Fix --- */
 
         .typing-indicator span {
             height: 8px;
@@ -103,21 +118,21 @@
             margin: 0.5em 0;
         }
 
-        .bot-bubble pre {
+        .bot-bubble pre,
+        .table-wrapper {
             background-color: #111827;
             padding: 1rem;
             border-radius: 0.5rem;
             margin: 1em 0;
-            white-space: pre;
             overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .bot-bubble pre {
+            white-space: pre;
             word-wrap: normal;
         }
         
-        .table-wrapper {
-            overflow-x: auto;
-            margin: 1em 0;
-        }
-
         .bot-bubble table {
             width: 100%;
             border-collapse: collapse;
@@ -226,12 +241,11 @@
         </div>
     </div>
 
-    <!-- Main Application Container (No Changes) -->
-    <div id="app-container" class="relative flex h-screen hidden">
+    <!-- Main Application Container -->
+    <div id="app-container" class="relative flex hidden">
         <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden"></div>
         <aside id="sidebar"
-            class="w-64 bg-gray-900 p-4 flex flex-col flex-shrink-0 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 z-30"
-            style="padding-left: 10px; padding-top: 10px; padding-right: 10px;">
+            class="w-64 bg-gray-900 p-4 flex flex-col flex-shrink-0 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 z-30">
             <button id="new-chat-btn" class="flex items-center p-3 rounded-lg text-left w-full hover:bg-gray-700 mb-4">
                 <i class="fas fa-plus mr-3"></i><span>New Chat</span>
             </button>
@@ -252,7 +266,9 @@
                 </div>
             </div>
         </aside>
-        <div class="flex-1 flex flex-col min-w-0">
+        
+        <!-- THIS IS THE FIX: New `content-wrapper` structure -->
+        <div class="content-wrapper flex-1 min-w-0">
             <header class="bg-gray-800 p-4 flex items-center justify-center border-b border-gray-700 flex-shrink-0">
                 <div class="w-full max-w-4xl flex items-center">
                     <button id="menu-btn" class="md:hidden text-white mr-4"><i class="fas fa-bars text-xl"></i></button>
@@ -267,7 +283,7 @@
                     </div>
                 </div>
             </header>
-            <main id="chat-container" class="flex-1 overflow-y-auto px-2 sm:px-6">
+            <main id="chat-container" class="px-2 sm:px-6">
                 <div id="message-list" class="w-full max-w-4xl mx-auto py-6 space-y-4"></div>
             </main>
             <footer class="px-2 sm:p-4 py-4 bg-gray-800/80 backdrop-blur-sm border-t border-gray-700 flex-shrink-0">

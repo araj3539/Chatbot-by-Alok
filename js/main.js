@@ -62,7 +62,6 @@ const logoutModal = document.getElementById('logout-modal');
 const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
 const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
 
-// --- THIS IS THE FIX: Updated System Instructions ---
 const systemInstruction = {
     role: "system",
     parts: [{ text: `Your name is NamasteAI created by Alok Raj. You are an intelligent and helpful AI Tutor. Your goal is to provide clear, well-structured, and visually appealing explanations.
@@ -278,7 +277,7 @@ const renderChatMessages = () => {
             const messageContent = sender === 'bot' ? marked.parse(textContent) : sanitizedText;
 
             const wrapperClass = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-            const bubbleClass = `chat-bubble p-4 rounded-2xl ${sender === 'user' ? 'user-bubble' : 'bot-bubble'} shadow-md`;
+            const bubbleClass = `chat-bubble ${sender === 'user' ? 'user-bubble' : 'bot-bubble'}`;
 
             messagesHTML += `
                 <div class="${wrapperClass}">
@@ -291,6 +290,13 @@ const renderChatMessages = () => {
     });
 
     messageList.innerHTML = messagesHTML;
+
+    messageList.querySelectorAll('.bot-bubble table').forEach(table => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-wrapper';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+    });
 
     renderMathInElement(messageList, {
         delimiters: [
@@ -310,7 +316,7 @@ function appendMessage(message, sender) {
     const messageWrapper = document.createElement('div');
     messageWrapper.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start');
     const messageBubble = document.createElement('div');
-    messageBubble.classList.add('chat-bubble', 'p-4', 'rounded-2xl', sender === 'user' ? 'user-bubble' : 'bot-bubble', 'shadow-md');
+    messageBubble.classList.add('chat-bubble', sender === 'user' ? 'user-bubble' : 'bot-bubble');
     
     if (sender === 'user') {
         messageBubble.textContent = message;
@@ -532,10 +538,6 @@ function handleStopGeneration() {
     }
 }
 
-const setAppHeight = () => {
-    appContainer.style.height = `${window.innerHeight}px`;
-};
-
 // --- UI Event Listeners ---
 signinBtn.addEventListener('click', handleSignIn);
 signinEmailLinkBtn.addEventListener('click', handlePasswordlessSignIn);
@@ -564,7 +566,7 @@ const openSidebar = () => { sidebar.classList.remove('-translate-x-full'); sideb
 const closeSidebar = () => { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); };
 menuBtn.addEventListener('click', openSidebar);
 sidebarOverlay.addEventListener('click', closeSidebar);
-window.addEventListener('resize', setAppHeight);
+
 
 // --- Speech to Text (Voice Recognition) Logic ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -613,5 +615,4 @@ if (SpeechRecognition) {
 }
 
 // --- Initial setup calls ---
-setAppHeight();
 handleEmailLinkFlow(); // Check for any kind of email link on page load
