@@ -125,11 +125,30 @@ auth.onAuthStateChanged(user => {
 const handleEmailLinkFlow = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const authToken = urlParams.get('authToken');
-    // -- FIX: Get the email from the URL --
     const email = urlParams.get('email');
+    const mode = urlParams.get('mode'); // Check for the mode
 
+    // If the link is for signing up
+    if (mode === 'signup' && auth.isSignInWithEmailLink(window.location.href)) {
+        // Get the email from local storage which was saved before sending the link
+        let emailForSignUp = window.localStorage.getItem('emailForSignUp');
+        if (!emailForSignUp) {
+            // If the email is not in local storage, prompt the user for it
+            emailForSignUp = window.prompt('Please provide your email to complete sign-up');
+        }
+        if(emailForSignUp){
+            // Switch to the sign-up view and show the password creation form
+            switchToSignUpView();
+            signupStep1.classList.add('hidden');
+            signupStep2.classList.remove('hidden');
+            // We don't sign in here, we just verified the email.
+            // The user will be created when they submit the password form.
+        } else {
+             handleAuthError({ message: "Email not found for completing sign-up." }, 'signup');
+        }
+    }
     // This is the primary flow for cross-device sign-in
-    if (authToken && email) {
+    else if (authToken && email) {
         fetch('/api/complete-auth', {
                 method: 'POST',
                 headers: {
