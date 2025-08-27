@@ -125,27 +125,28 @@ auth.onAuthStateChanged(user => {
 const handleEmailLinkFlow = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const authToken = urlParams.get('authToken');
-    const isSignUp = urlParams.get('mode') === 'signup';
+    // -- FIX: Get the email from the URL --
+    const email = urlParams.get('email');
 
-    if (auth.isSignInWithEmailLink(window.location.href) && authToken) {
-        let email = window.localStorage.getItem(isSignUp ? 'emailForSignUp' : 'emailForSignIn');
-        if (!email) {
-            email = window.prompt('Please provide your email for confirmation');
-        }
-
-        if (email) {
-            fetch('/api/complete-auth', {
+    // This is the primary flow for cross-device sign-in
+    if (authToken && email) {
+        fetch('/api/complete-auth', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email, token: authToken })
-            }).then(res => {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: email,
+                    token: authToken
+                })
+            })
+            .then(res => {
                 if (res.ok) {
                     switchToVerificationSuccessView();
                 } else {
                     alert('Verification failed. Please try again.');
                 }
             });
-        }
     }
 };
 
@@ -165,11 +166,18 @@ const handleSignIn = () => {
 
 const handlePasswordlessSignIn = () => {
     const email = signinEmailInput.value;
-    if (!email) { alert("Please enter your email address."); return; }
+    if (!email) {
+        alert("Please enter your email address.");
+        return;
+    }
 
     const authToken = `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const url = `${window.location.origin}${window.location.pathname}?authToken=${authToken}`;
-    const actionCodeSettings = { url: url, handleCodeInApp: true };
+    // -- FIX: Add the email to the URL --
+    const url = `${window.location.origin}${window.location.pathname}?authToken=${authToken}&email=${encodeURIComponent(email)}`;
+    const actionCodeSettings = {
+        url: url,
+        handleCodeInApp: true
+    };
 
     auth.sendSignInLinkToEmail(email, actionCodeSettings)
         .then(() => {
@@ -178,10 +186,12 @@ const handlePasswordlessSignIn = () => {
             signinStep2.classList.remove('hidden');
 
             const unsub = db.collection('authTokens').doc(authToken).onSnapshot(doc => {
+                // For debugging, you can add this line:
+                console.log("Firestore listener fired:", doc.data());
                 if (doc.exists && doc.data().status === 'verified') {
-                    unsub(); 
+                    unsub();
                     auth.signInWithCustomToken(doc.data().customToken).catch(handleAuthError);
-                    doc.ref.delete(); 
+                    doc.ref.delete();
                 }
             });
         })
