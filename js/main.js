@@ -126,46 +126,51 @@ const handleEmailLinkFlow = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const authToken = urlParams.get('authToken');
     const email = urlParams.get('email');
-    const mode = urlParams.get('mode'); // Check for the mode
+    const mode = urlParams.get('mode');
 
-    // If the link is for signing up
+    // --- THIS IS THE FIX ---
+    // Handle the sign-up completion flow
     if (mode === 'signup' && auth.isSignInWithEmailLink(window.location.href)) {
-        // Get the email from local storage which was saved before sending the link
+        // Get the email from local storage
         let emailForSignUp = window.localStorage.getItem('emailForSignUp');
         if (!emailForSignUp) {
-            // If the email is not in local storage, prompt the user for it
-            emailForSignUp = window.prompt('Please provide your email to complete sign-up');
+            // As a fallback, prompt the user for their email
+            emailForSignUp = window.prompt('Please provide your email to complete the sign-up process.');
         }
-        if(emailForSignUp){
-            // Switch to the sign-up view and show the password creation form
+
+        if (emailForSignUp) {
+            // The email is now verified. Simply show the password creation form.
             switchToSignUpView();
             signupStep1.classList.add('hidden');
             signupStep2.classList.remove('hidden');
-            // We don't sign in here, we just verified the email.
-            // The user will be created when they submit the password form.
+            // Populate the email input for clarity, though it's not used directly for account creation
+            signupEmailInput.value = emailForSignUp;
+            signupEmailInput.disabled = true; // Prevent user from changing it
         } else {
-             handleAuthError({ message: "Email not found for completing sign-up." }, 'signup');
+            handleAuthError({ message: "Could not verify your email. Please try signing up again." }, 'signup');
         }
+        // Clean the URL to remove the query parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
     }
-    // This is the primary flow for cross-device sign-in
+    // Handle the cross-device sign-in flow
     else if (authToken && email) {
         fetch('/api/complete-auth', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: email,
-                    token: authToken
-                })
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: email,
+                token: authToken
             })
-            .then(res => {
-                if (res.ok) {
-                    switchToVerificationSuccessView();
-                } else {
-                    alert('Verification failed. Please try again.');
-                }
-            });
+        })
+        .then(res => {
+            if (res.ok) {
+                switchToVerificationSuccessView();
+            } else {
+                alert('Verification failed. Please try again.');
+            }
+        });
     }
 };
 
