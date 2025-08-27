@@ -126,51 +126,45 @@ const handleEmailLinkFlow = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const authToken = urlParams.get('authToken');
     const email = urlParams.get('email');
-    const mode = urlParams.get('mode');
 
-    // --- THIS IS THE FIX ---
-    // Handle the sign-up completion flow
-    if (mode === 'signup' && auth.isSignInWithEmailLink(window.location.href)) {
-        // Get the email from local storage
+    // First, handle the custom cross-device sign-in flow
+    if (authToken && email) {
+        fetch('/api/complete-auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, token: authToken })
+            })
+            .then(res => {
+                if (res.ok) {
+                    switchToVerificationSuccessView();
+                } else {
+                    alert('Verification failed. Please try again.');
+                }
+            });
+        return; // Stop here for this flow
+    }
+
+    // Next, handle the standard Firebase email link for sign-up
+    if (auth.isSignInWithEmailLink(window.location.href)) {
         let emailForSignUp = window.localStorage.getItem('emailForSignUp');
         if (!emailForSignUp) {
-            // As a fallback, prompt the user for their email
+            // Fallback if local storage was cleared
             emailForSignUp = window.prompt('Please provide your email to complete the sign-up process.');
         }
 
         if (emailForSignUp) {
-            // The email is now verified. Simply show the password creation form.
+            // User's intent was to sign up. Show the password form.
             switchToSignUpView();
             signupStep1.classList.add('hidden');
             signupStep2.classList.remove('hidden');
-            // Populate the email input for clarity, though it's not used directly for account creation
             signupEmailInput.value = emailForSignUp;
-            signupEmailInput.disabled = true; // Prevent user from changing it
+            signupEmailInput.disabled = true;
         } else {
-            handleAuthError({ message: "Could not verify your email. Please try signing up again." }, 'signup');
+            handleAuthError({ message: "Could not determine email for sign-up. Please try again." }, 'signup');
         }
-        // Clean the URL to remove the query parameters
+
+        // Clean the URL to prevent this from re-running on refresh
         window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    // Handle the cross-device sign-in flow
-    else if (authToken && email) {
-        fetch('/api/complete-auth', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                email: email,
-                token: authToken
-            })
-        })
-        .then(res => {
-            if (res.ok) {
-                switchToVerificationSuccessView();
-            } else {
-                alert('Verification failed. Please try again.');
-            }
-        });
     }
 };
 
@@ -227,8 +221,8 @@ const handleSignUpSendLink = () => {
     const email = signupEmailInput.value;
     if (!email) { alert("Please enter your email address."); return; }
     
-    const authToken = `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const url = `${window.location.origin}${window.location.pathname}?authToken=${authToken}&mode=signup`;
+    // The URL just needs to point back to the app.
+    const url = window.location.href;
     const actionCodeSettings = { url: url, handleCodeInApp: true };
 
     auth.sendSignInLinkToEmail(email, actionCodeSettings)
