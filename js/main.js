@@ -30,6 +30,7 @@ const signinPasswordInput = document.getElementById('signin-password-input');
 const signinBtn = document.getElementById('signin-btn');
 const signinEmailLinkBtn = document.getElementById('signin-email-link-btn');
 const signinMessage = document.getElementById('signin-message');
+const googleSigninBtn = document.getElementById('google-signin-btn');
 
 // Sign Up Elements
 const signupStep1 = document.getElementById('signup-step-1');
@@ -180,6 +181,23 @@ const handleAuthError = (error, type = 'signin') => {
 const handleSignIn = () => {
     auth.signInWithEmailAndPassword(signinEmailInput.value, signinPasswordInput.value)
         .catch(handleAuthError);
+};
+// --- New Google Sign-In Handler ---
+const handleGoogleSignIn = () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider)
+        .then((result) => {
+            // This gives you a Google Access Token. You can use it to access the Google API.
+            const credential = result.credential;
+            const token = credential.accessToken;
+            // The signed-in user info.
+            const user = result.user;
+            // You don't need to do anything else here,
+            // the onAuthStateChanged listener will handle the UI switch.
+        }).catch((error) => {
+            // Handle Errors here.
+            handleAuthError(error, 'signin');
+        });
 };
 
 const handlePasswordlessSignIn = () => {
@@ -585,6 +603,7 @@ const handleSuggestionClick = (event) => {
 
 // --- UI Event Listeners ---
 signinBtn.addEventListener('click', handleSignIn);
+googleSigninBtn.addEventListener('click', handleGoogleSignIn);
 signinEmailLinkBtn.addEventListener('click', handlePasswordlessSignIn);
 signupSendLinkBtn.addEventListener('click', handleSignUpSendLink);
 signupCreateAccountBtn.addEventListener('click', handleCreateAccount);

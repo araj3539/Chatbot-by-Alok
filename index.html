@@ -19,7 +19,8 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
 
     <style>
-        html, body {
+        html,
+        body {
             height: 100%;
             overflow: hidden;
         }
@@ -129,7 +130,7 @@
             white-space: pre;
             word-wrap: normal;
         }
-        
+
         .bot-bubble table {
             width: 100%;
             border-collapse: collapse;
@@ -179,6 +180,12 @@
                         <button id="signin-btn"
                             class="w-full py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">Sign
                             In</button>
+                        <button id="google-signin-btn"
+                            class="w-full py-2 mt-4 font-semibold text-gray-800 bg-white rounded-md hover:bg-gray-200 flex items-center justify-center">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                                alt="Google logo" class="w-5 h-5 mr-2">
+                            Sign In with Google
+                        </button>
                         <div class="relative flex py-2 items-center">
                             <div class="flex-grow border-t border-gray-600"></div>
                             <span class="flex-shrink mx-4 text-gray-400 text-sm">or</span>
@@ -212,12 +219,13 @@
                         Verification Link</button>
                 </div>
                 <div id="signup-step-2" class="hidden space-y-4 mt-4">
-                     <p class="text-center text-green-400 text-sm">Email verified! Please create a password to complete your registration.</p>
+                    <p class="text-center text-green-400 text-sm">Email verified! Please create a password to complete
+                        your registration.</p>
                     <div>
                         <input type="password" id="signup-password-input" placeholder="Create a Password"
                             class="w-full px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-md">
                     </div>
-                     <div>
+                    <div>
                         <input type="password" id="signup-confirm-password-input" placeholder="Confirm Password"
                             class="w-full px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-md">
                     </div>
@@ -263,7 +271,7 @@
                 </div>
             </div>
         </aside>
-        
+
         <div class="content-wrapper flex-1 min-w-0">
             <header class="bg-gray-800 p-4 flex items-center justify-center border-b border-gray-700 flex-shrink-0">
                 <div class="w-full max-w-4xl flex items-center">
@@ -330,7 +338,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
