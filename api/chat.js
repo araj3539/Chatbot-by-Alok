@@ -19,7 +19,7 @@ const db = admin.firestore();
 // --- Gemini API Helper ---
 const callGemini = async (payload, geminiApiKey) => {
    // Use this for the fast, cost-effective model
-const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey},`;
     const safetySettings = [{ "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" }];
     const response = await fetch(geminiApiUrl, {
         method: 'POST',
